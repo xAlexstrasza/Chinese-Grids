@@ -1,760 +1,1414 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hanzi Workbook Generator</title>
-    <script src="https://unpkg.com/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
-    <script src="https://unpkg.com/pinyin-pro@3.18.2/dist/index.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; height: 100vh; overflow: hidden; display: flex; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Chinese Grids · Printable Chinese character practice sheets</title>
+<meta name="description" content="Make printable Chinese character practice sheets with stroke order, pinyin, tracing copies and 米字格 grids. Print them or save them as PDF.">
+<meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1220" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234255ff'/%3E%3Cg fill='none' stroke='%2397a2ff' stroke-width='2'%3E%3Cpath d='M12 32h40M32 12v40' stroke-dasharray='5.714 5.714'/%3E%3Cpath d='M12 12l40 40M52 12 12 52' stroke-dasharray='4.351 4.351'/%3E%3C/g%3E%3Crect x='12' y='12' width='40' height='40' rx='3' fill='none' stroke='%23fff' stroke-width='3.5'/%3E%3C/svg%3E">
+<style id="pageRule">@page{size:210mm 297mm;margin:0}</style>
+<style>
+/* Latin letters and digits inside Kai text use a clean sans; Chinese and full-width punctuation stay Kai. */
+@font-face{font-family:"HW Latin";font-weight:400;src:local("Segoe UI"),local("SegoeUI"),local("Helvetica Neue"),local("HelveticaNeue"),local("Arial"),local("ArialMT");unicode-range:U+0020-007E,U+00A0-024F,U+1E00-1EFF}
+@font-face{font-family:"HW Latin";font-weight:600;src:local("Segoe UI Semibold"),local("SegoeUI-Semibold"),local("Helvetica Neue Medium"),local("HelveticaNeue-Medium"),local("Arial Bold"),local("Arial-BoldMT");unicode-range:U+0020-007E,U+00A0-024F,U+1E00-1EFF}
+@font-face{font-family:"HW Latin";font-weight:700;src:local("Segoe UI Bold"),local("SegoeUI-Bold"),local("Helvetica Neue Bold"),local("HelveticaNeue-Bold"),local("Arial Bold"),local("Arial-BoldMT");unicode-range:U+0020-007E,U+00A0-024F,U+1E00-1EFF}
+/* ---------- tokens (same palette as 汉字 Stories / 汉字 Cards) ---------- */
+:root{
+ --bg:#f6f7fb;--fg:#1f2430;--card:#fff;--mut:#6b7385;--pri:#4255ff;--ok:#1f9d63;--bad:#d64545;--bd:#dfe3ee;
+ --sh:0 1px 2px rgba(16,24,54,.05),0 8px 24px rgba(16,24,54,.07);
+ --sh-lg:0 2px 6px rgba(16,24,54,.06),0 22px 56px rgba(16,24,54,.16);
+ --hov:rgba(66,85,255,.07);--soft:rgba(66,85,255,.12);--ring:0 0 0 3px rgba(66,85,255,.22);
+ --stage:#e9ecf4;--paper-sh:0 1px 2px rgba(16,24,54,.10),0 10px 30px rgba(16,24,54,.12);
+ --spring:cubic-bezier(.34,1.56,.64,1);--easeout:cubic-bezier(.16,1,.3,1);
+ --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+ --zh:"Noto Sans SC","PingFang SC","Microsoft YaHei","Source Han Sans SC","Hiragino Sans GB",sans-serif;
+ --kai:"KaiTi","STKaiti","Kaiti SC","BiauKai","AR PL UKai CN","Noto Serif SC","Songti SC","SimSun",serif;
+ --kaix:"HW Latin","KaiTi","STKaiti","Kaiti SC","BiauKai","AR PL UKai CN","Noto Serif SC","Songti SC","SimSun",serif;
+ --pyf:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+ color-scheme:light}
+@media(prefers-color-scheme:dark){:root{
+ --bg:#0f1220;--fg:#e8eaf3;--card:#1a1e33;--mut:#9aa2bd;--pri:#7c8cff;--ok:#3ecf8e;--bad:#ff6b6b;--bd:#2c3250;
+ --sh:0 1px 2px rgba(0,0,0,.35),0 10px 30px rgba(0,0,0,.35);
+ --sh-lg:0 2px 6px rgba(0,0,0,.4),0 24px 64px rgba(0,0,0,.55);
+ --hov:rgba(124,140,255,.09);--soft:rgba(124,140,255,.16);--ring:0 0 0 3px rgba(124,140,255,.3);
+ --stage:#0a0d19;--paper-sh:0 1px 2px rgba(0,0,0,.5),0 14px 40px rgba(0,0,0,.5);
+ color-scheme:dark}}
 
-        /* LEFT PANEL */
-        .left-panel { width: 400px; background: #2c3e50; color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 10; }
-        .left-header { padding: 20px; background: #1a252f; border-bottom: 2px solid #e74c3c; }
-        .left-header h1 { font-size: 24px; margin-bottom: 5px; }
-        .left-header p { font-size: 12px; color: #bdc3c7; }
-        .left-content { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.zh{font-family:var(--zh)}
+a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 14px;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:transform .1s,background-color .15s,border-color .15s,box-shadow .2s,color .15s,filter .2s}
+button:hover{border-color:var(--pri)}
+button:active{transform:scale(.97)}
+button:focus-visible{outline:none;box-shadow:var(--ring);border-color:var(--pri)}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+@media(hover:hover){button.pri:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(66,85,255,.32);filter:brightness(1.06)}}
+button.ghost{background:none;border-color:transparent}
+button.ghost:hover{background:var(--hov);border-color:transparent}
+button.icon{padding:7px;border-radius:999px}
+button.sm{padding:5px 10px;font-size:13.5px}
+button.link{padding:0;border:0;background:none;color:var(--pri);font-weight:600}
+button.link:hover{text-decoration:underline}
+button:disabled{opacity:.45;cursor:default;transform:none!important;box-shadow:none!important;filter:none!important}
+input,textarea{font:inherit;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;max-width:100%;transition:border-color .18s,box-shadow .18s}
+input:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:var(--ring)}
+.ic{width:20px;height:20px;flex:none}
+.sm .ic,.ic.s{width:17px;height:17px}
 
-        /* Controls */
-        label { font-size: 14px; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .slider-input-group { display: flex; gap: 8px; align-items: center; }
-        .slider-input-group input[type="range"] { flex: 1; cursor: pointer; }
-        .slider-input-group input[type="number"] { width: 60px; padding: 6px 8px; border: 2px solid #34495e; border-radius: 5px; background: #ecf0f1; font-weight: bold; text-align: center; color: #2c3e50; }
-        textarea { width: 100%; height: 150px; padding: 12px; border-radius: 5px; font-size: 16px; font-family: "KaiTi", serif; resize: vertical; }
-        select, input[type="color"] { width: 100%; padding: 8px; border-radius: 5px; border: none; font-size: 14px; }
-        input[type="color"] { height: 40px; cursor: pointer; }
-        
-        .control-group { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; }
-        .control-row { display: flex; gap: 10px; }
-        .control-col { flex: 1; }
-        .checkbox-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13px; color: #ecf0f1; }
-        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+/* ---------- top bar ---------- */
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:12px;padding:0 16px 0 18px;background:color-mix(in srgb,var(--bg) 84%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--bd)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.logo{width:34px;height:34px;flex:none;border-radius:10px;box-shadow:0 4px 14px rgba(66,85,255,.32)}
+.brand h1{margin:0;font-size:18px;line-height:1.15;letter-spacing:-.01em;white-space:nowrap}
+.brand h1 span{font-family:var(--zh)}
+.brand p{margin:0;font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand>div{min-width:0}
 
-        /* Buttons */
-        .button-group { display: flex; gap: 10px; margin-top: 10px; }
-        button { flex: 1; background: #e74c3c; color: white; border: none; padding: 14px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
-        button:hover { background: #c0392b; transform: translateY(-1px); }
-        button.secondary { background: #34495e; }
-        button.secondary:hover { background: #2c3e50; }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
-        
-        .status { padding: 12px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 13px; min-height: 44px; display: flex; align-items: center; }
-        .char-count { font-size: 12px; color: #95a5a6; margin-top: 5px; }
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:400px minmax(0,1fr);height:calc(100vh - 60px);height:calc(100dvh - 60px)}
+.side{overflow-y:auto;padding:16px 14px 24px 16px;border-right:1px solid var(--bd);scrollbar-width:thin;scrollbar-color:var(--bd) transparent}
+.stage{position:relative;overflow:auto;background:var(--stage);scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--mut) 45%,transparent) transparent}
+@media(min-width:861px){body{overflow:hidden}}
+@media(max-width:1180px){.app{grid-template-columns:350px minmax(0,1fr)}}
 
-        /* RIGHT PANEL */
-        .right-panel { flex: 1; background: #ecf0f1; overflow: auto; display: flex; justify-content: center; padding: 20px; }
-        .preview-container { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-        .empty-state { text-align: center; padding: 60px 20px; color: #95a5a6; }
+/* ---------- cards & rows ---------- */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px 16px;margin-bottom:12px;animation:fadeup .32s var(--easeout) both}
+.side .card:nth-child(2){animation-delay:.03s}.side .card:nth-child(3){animation-delay:.06s}.side .card:nth-child(4){animation-delay:.09s}.side .card:nth-child(n+5){animation-delay:.12s}
+.card h3{margin:0 0 4px;font-size:12px;font-weight:700;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.card h3 .ic{width:16px;height:16px}
+.lab{display:block;font-weight:700;font-size:14px;margin:0 0 8px}
+.set{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 8px;margin:0 -8px;border-radius:10px;transition:background-color .2s}
+.set.sep::before{content:'';position:absolute;left:8px;right:8px;top:0;height:1px;background:var(--bd);transition:opacity .2s}
+@media(hover:hover){.set:hover{background:var(--hov)}.set:hover::before,.set:hover+.set::before{opacity:0}}
+.set>label,.set>.lbl{flex:1;min-width:0;font-weight:600;font-size:14px;cursor:default}
+.set>label{cursor:pointer}
+.sub{display:block;font-weight:400;color:var(--mut);font-size:12.5px;line-height:1.3;margin-top:1px}
+.set.col{flex-direction:column;align-items:stretch;gap:6px;padding-top:10px;padding-bottom:10px}
+.set.col input{width:100%;height:40px}
+.hint{margin:8px 0 2px;font-size:13px;color:var(--mut)}
 
-        /* PAGE */
-        .page { width: 215.9mm; min-height: 279.4mm; position: relative; overflow: hidden; background: white; margin-bottom: 20px; }
-        .char-block { position: absolute; }
-        
-        /* HEADER */
-        .header-row { position: absolute; bottom: 100%; left: 0; width: 100%; height: 4mm; display: flex; align-items: center; font-family: "Times New Roman", serif; line-height: 1; }
-        .pinyin { font-size: 8pt; font-weight: bold; margin-right: 5px; color: #000; position: relative; top: 0.5mm; }
-        .stroke-steps-container { display: flex; gap: 1px; margin-right: 8px; }
-        .stroke-box { width: 3.5mm; height: 3.5mm; }
-        .stroke-box svg { width: 100%; height: 100%; }
-        .definition-box { font-size: 7pt; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; position: relative; top: 0.5mm; }
+/* switch (from 汉字 Cards) */
+.sw{appearance:none;-webkit-appearance:none;width:44px;height:26px;padding:0;margin:0;border:0;border-radius:13px;background:var(--bd);position:relative;cursor:pointer;flex:none;transition:background-color .2s}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:left .26s var(--spring)}
+.sw:checked{background:var(--pri)}.sw:checked::after{left:21px}
+.sw:focus{box-shadow:none}.sw:focus-visible{outline:none;box-shadow:var(--ring)}
+.sw:disabled{opacity:.4;cursor:default}
 
-        .header-row.first-row-special .pinyin { font-size: 2mm !important; }
-        .header-row.first-row-special .stroke-box { width: 2.4mm !important; height: 2.4mm !important; }
-        .header-row.first-row-special .definition-box { font-size: 2mm !important; }
-        .header-row.first-row-special .stroke-steps-container { gap: 0.5mm !important; }
+/* slider */
+.rng{display:flex;align-items:center;gap:10px;flex:1.3;min-width:0}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:24px;background:none;border:0;padding:0;margin:0;cursor:pointer;--p:50%;border-radius:0}
+input[type=range]:focus{box-shadow:none}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--pri) var(--p),var(--bd) var(--p))}
+input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:var(--bd)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--pri)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-6px;border-radius:50%;background:#fff;border:2px solid var(--pri);box-shadow:0 1px 4px rgba(16,24,54,.25);transition:transform .15s var(--spring)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--pri);box-shadow:0 1px 4px rgba(16,24,54,.25)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.18)}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:var(--ring)}
+.val{min-width:50px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
 
-        /* --- PINYIN GRID CSS --- */
-        .pinyin-grid-row {
-            display: flex;
-            align-items: flex-end; 
-        }
-        .pinyin-cell {
-            text-align: center;
-            font-size: 9pt; 
-            font-family: "Arial", sans-serif;
-            font-weight: normal;
-            color: black;
-            white-space: nowrap;
-            overflow: visible;
-        }
-        .header-row.first-row-special .pinyin-cell { font-size: 10pt; font-weight: bold; }
+/* stepper */
+.step{display:inline-flex;align-items:center;border:1px solid var(--bd);border-radius:999px;background:var(--card);height:34px;flex:none}
+.step button{border:0;background:none;width:34px;height:32px;padding:0;border-radius:999px;color:var(--mut);font-size:18px;line-height:1}
+.step button:hover{color:var(--pri);background:var(--hov)}
+.step output{min-width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 
-        .practice-row { display: flex; align-items: center; padding: 0; margin: 0; line-height: 0; }
-        
-        /* THE BOX */
-        .grid-box {
-            position: relative;
-            border: none;
-            width: 28.7527pt;
-            height: 28.7557pt;
-            background: white;
-            box-sizing: border-box;
-            flex-shrink: 0;
-        }
+/* segmented controls */
+.seg{display:flex;background:var(--bg);border:1px solid var(--bd);border-radius:999px;padding:3px;gap:2px;flex:none}
+.seg button{flex:1;border:0;background:none;border-radius:999px;padding:5px 12px;font-weight:600;font-size:13px;color:var(--mut);white-space:nowrap;box-shadow:none}
+.seg button:hover{color:var(--fg);background:none}
+.seg button[aria-checked=true],.seg button[aria-selected=true]{background:var(--card);color:var(--pri);box-shadow:0 1px 2px rgba(16,24,54,.08),0 2px 8px rgba(16,24,54,.08)}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:4px}
+.modes button{flex-direction:column;gap:1px;border:1px solid transparent;background:none;border-radius:11px;padding:7px 4px 6px;color:var(--mut);font-weight:600;font-size:13px}
+.modes button:hover{color:var(--fg);border-color:transparent}
+.modes .mz{font-family:var(--kai);font-size:23px;line-height:1.15;font-weight:400}
+.modes button[aria-checked=true]{background:var(--card);color:var(--pri);border-color:var(--bd);box-shadow:0 1px 2px rgba(16,24,54,.06),0 4px 12px rgba(16,24,54,.07)}
+.mode-hint{margin:10px 2px 0;color:var(--mut);font-size:13.5px;min-height:39px}
 
-        .grid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; display: block; }
-        .hanzi-target { position: absolute; top: 0; left: 0; z-index: 10; }
+/* content */
+.txt{width:100%;min-height:128px;resize:vertical;font-family:var(--zh);font-size:18px;line-height:1.6;padding:10px 12px;border-radius:12px;display:block}
+.txt::placeholder{color:var(--mut);opacity:.75;font-size:15px}
+.meta{display:flex;align-items:center;gap:8px;margin-top:6px;color:var(--mut);font-size:13px;min-height:32px}
+.meta .grow{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{border:1px solid var(--bd);border-radius:999px;padding:4px 12px;font-size:13px;background:var(--card);color:var(--fg)}
+.chip:hover{border-color:var(--pri);color:var(--pri)}
+.chips .lab2{color:var(--mut);font-size:13px;margin-right:2px}
+#examples{margin-top:4px}
+.hz{margin-top:12px;padding-top:12px;border-top:1px dashed var(--bd)}
+.hz-h{margin:0 0 8px;font-size:12.5px;color:var(--mut)}
+.hz-l{display:flex;flex-wrap:wrap;gap:6px}
+.hzc{width:46px;height:52px;padding:3px 0 0;flex-direction:column;gap:1px;border-radius:12px;line-height:1.1}
+.hzc span{font-size:21px}
+.hzc small{font-size:10.5px;color:var(--mut);line-height:1;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hzc:hover small{color:var(--pri)}
+.hzc.miss{border-style:dashed}
+.hz-more{height:52px;border-radius:12px}
 
-        /* Small corner punctuation */
-        .corner-punc {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            font-size: 10px;
-            font-weight: bold;
-            font-family: "KaiTi", serif;
-            color: black;
-            z-index: 15;
-            line-height: 1;
-        }
+/* grid style tiles + swatches */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 6px}
+.tile{flex-direction:column;gap:5px;padding:9px 4px 7px;border-radius:12px;font-size:12px;font-weight:600;color:var(--mut)}
+.tile svg{width:36px;height:36px;display:block;background:#fff;border-radius:4px;color:var(--gc,#d64545);box-shadow:0 0 0 1px rgba(16,24,54,.06)}
+.tile[aria-checked=true]{border-color:var(--pri);color:var(--pri);box-shadow:var(--ring)}
+.sws{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.swc{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--card);box-shadow:0 0 0 1px var(--bd);background:var(--c)}
+.swc:hover{border-color:var(--card);box-shadow:0 0 0 1px var(--pri)}
+.swc[aria-checked=true]{box-shadow:0 0 0 2px var(--pri)}
+.swc.custom{background:conic-gradient(#ee363e,#f47c36,#f5c542,#73bb4f,#45c4d6,#649cd3,#7c5cff,#ee363e);position:relative;overflow:hidden;cursor:pointer}
+.swc.custom.on{background:var(--c)}
+.swc.custom input{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:calc(100% + 12px);height:calc(100% + 12px);padding:0;border:0}
 
-        /* --- EXERCISE MODE CSS --- */
-        .exercise-block { 
-            position: relative; 
-            padding-left: 12mm; 
-            page-break-inside: avoid; 
-        }
-        .exercise-number { 
-            position: absolute;
-            left: 10mm;
-            width: 10mm;
-            font-weight: bold; 
-            font-size: 11pt; 
-            font-family: "KaiTi", serif;
-        }
-        .exercise-content { width: 100%; }
-        .exercise-header { white-space: pre-wrap; font-family: "KaiTi", serif; font-size: 11pt; font-weight: bold; margin-bottom: 5px; }
+.foot{padding:4px 6px 0;color:var(--mut);font-size:12.5px;line-height:1.5}
+.foot p{margin:0 0 6px}
 
-        /* DISABLED STATE CSS */
-        .disabled-control {
-            opacity: 0.4;
-            pointer-events: none;
-            filter: grayscale(100%);
-        }
+/* ---------- preview stage ---------- */
+.stage-bar{position:sticky;top:12px;z-index:5;display:flex;justify-content:center;height:0;pointer-events:none}
+.pill{pointer-events:auto;display:flex;align-items:center;gap:4px;max-width:calc(100% - 24px);background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:4px 5px 4px 14px;box-shadow:var(--sh);font-size:13px;height:42px}
+.status{color:var(--mut);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;line-height:20px}
+.status b{color:var(--fg);font-weight:600}
+.status .warn{color:var(--bad);font-weight:600}
+.status .spin{display:inline-block;vertical-align:-3px;margin-right:8px}
+@media(max-width:560px){.status .st-x{display:none}}
+.pill .sep{width:1px;height:20px;background:var(--bd);margin:0 4px 0 6px;flex:none}
+.pill button{flex:none}
+.zoomv{min-width:56px;font-weight:600;font-variant-numeric:tabular-nums;padding:6px 8px;border-radius:999px}
+.spin{width:15px;height:15px;flex:none;border:2px solid var(--bd);border-top-color:var(--pri);border-radius:50%;animation:spin .8s linear infinite}
+.pages-outer{display:flex;justify-content:center;padding:76px 24px 56px;min-width:fit-content}
+#pages{display:flex;flex-direction:column;align-items:center;gap:26px}
+.sheet-wrap{display:flex;flex-direction:column;align-items:center;gap:9px}
+.sheet-label{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.empty{position:absolute;left:50%;top:84px;z-index:4;width:min(430px,calc(100% - 32px));transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh-lg);padding:24px 22px 20px;text-align:center;animation:popin .3s var(--easeout)}
+.empty .ei .ic{width:38px;height:38px;color:var(--pri);stroke-width:1.6}
+.empty h2{margin:6px 0 4px;font-size:18px}
+.empty p{margin:0 0 14px;color:var(--mut);font-size:14px}
+.empty .chips{justify-content:center}
 
-    </style>
+/* ---------- the printed sheet (always paper white) ---------- */
+.sheet{position:relative;flex:none;background:#fff;color:#1f2430;box-shadow:var(--paper-sh);overflow:hidden;color-scheme:light}
+.sheet>svg{position:absolute;left:0;top:0;display:block;overflow:visible}
+.sheet text.p{font-family:var(--pyf);fill:#2a2f3b}
+.sheet text.z{font-family:var(--zh)}
+.sheet text.k{font-family:var(--kai)}
+.sheet .t1,.sheet text.t1{color:#ee363e;fill:#ee363e}.sheet .t2,.sheet text.t2{color:#f47c36;fill:#f47c36}.sheet .t3,.sheet text.t3{color:#5aa63a;fill:#5aa63a}.sheet .t4,.sheet text.t4{color:#4f8fd0;fill:#4f8fd0}.sheet .t5,.sheet text.t5{color:#9a9a9a;fill:#9a9a9a}
+.sheet i{font-style:normal}
+.hd{position:absolute;display:flex;align-items:center;gap:1.6mm;overflow:hidden;white-space:nowrap;font-family:var(--pyf);line-height:1}
+.hd .py{font-weight:700;flex:none;color:#1f2430}
+.hd .stp{flex:none;display:block}
+.hd .mn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:#596175}
+.ex-n{position:absolute;font-weight:700;font-family:var(--kaix);color:#1f2430;line-height:1.45}
+.ex-q{position:absolute;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--kaix);font-weight:600;color:#1f2430;line-height:1.45}
+.ph{position:absolute;display:flex;align-items:flex-end;justify-content:space-between;gap:6mm;border-bottom:.3mm solid #c9ced9;padding-bottom:1.8mm}
+.ph-t{font-weight:700;font-size:5mm;line-height:1.2;font-family:var(--kaix);color:#1f2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ph-f{display:flex;gap:2mm;align-items:flex-end;font-size:3.1mm;line-height:1;color:#596175;font-family:var(--pyf);flex:none;white-space:nowrap}
+.ph-f b{font-family:var(--zh);font-weight:600;color:#1f2430}
+.ph-f i{display:inline-block;width:30mm;border-bottom:.25mm solid #9aa2b5;margin:0 3mm 0 1mm;height:3.4mm}
+.ph-f i.d{width:22mm;margin-right:0}
+.pf{position:absolute;left:0;right:0;text-align:center;font-size:2.8mm;line-height:1;color:#8a93a8;font-family:var(--pyf);font-variant-numeric:tabular-nums}
+#measure{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none}
+
+/* ---------- character card (modal) ---------- */
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(15,18,32,.48);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fadein .18s}
+.mcard{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh-lg);padding:16px 18px 18px;animation:popin .24s var(--easeout)}
+.mhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mchar{font-family:var(--zh);font-size:34px;line-height:1;font-weight:600}
+.mpy{font-size:20px;font-weight:700}
+.mhead .grow{flex:1}
+.mpos{font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+.mbody{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start}
+.wbox{position:relative;width:260px;height:260px;background:#fff;border-radius:6px;box-shadow:0 0 0 1px rgba(16,24,54,.08),0 6px 18px rgba(16,24,54,.08)}
+.wbox>svg.wg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#hw{position:absolute;inset:0;touch-action:none}
+#hw svg{display:block}
+.nodata{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:#6b7385;font-size:13px}
+.nodata b{display:block;font-family:var(--kai);font-size:120px;line-height:1;color:#1f2430;font-weight:400;margin-bottom:6px}
+.mact{display:flex;gap:8px;margin-top:12px}
+.mact button{flex:1}
+.mstat{margin-top:10px;font-size:13.5px;color:var(--mut);min-height:20px;font-weight:600}
+.mstat.ok{color:var(--ok)}.mstat.bad{color:var(--bad)}
+.mi{margin:0;display:grid;gap:12px;align-content:start}
+.mi dt{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.mi dd{margin:2px 0 0;font-size:15px;line-height:1.45}
+.mi .zh{font-size:16px}
+.mi .muted{color:var(--mut)}
+.t1{color:#ee363e}.t2{color:#f47c36}.t3{color:#5aa63a}.t4{color:#4f8fd0}.t5{color:#9a9a9a}
+@media(prefers-color-scheme:dark){.mpy .t3,.mi .t3{color:#73bb4f}.mpy .t4,.mi .t4{color:#649cd3}.mpy .t5,.mi .t5{color:#a0a0a0}}
+@media(max-width:620px){.mbody{grid-template-columns:1fr}.wcol{display:flex;flex-direction:column;align-items:center}.mact{width:100%}}
+
+/* ---------- toast (from 汉字 Stories) ---------- */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:70;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-left:4px solid var(--ok);border-radius:12px;padding:10px 12px 10px 16px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.3);transition:transform .25s cubic-bezier(.2,.8,.3,1.2),opacity .25s;max-width:min(92%,520px);display:flex;align-items:center;gap:14px}
+.toast.on{transform:translate(-50%,0);opacity:1}.toast.bad{border-left-color:var(--bad)}.toast.info{border-left-color:var(--pri)}
+.toast button{padding:5px 12px;font-size:13px;flex:none}
+
+/* ---------- phones & small tablets ---------- */
+.tabs{display:none}
+@media(max-width:860px){
+ .app{display:block;height:auto}
+ .side{border-right:0;padding:12px 12px 100px;overflow:visible}
+ .stage{display:none;min-height:calc(100dvh - 60px);padding-bottom:84px}
+ body.v-prev .side{display:none}
+ body.v-prev .stage{display:block}
+ .pages-outer{padding:70px 12px 40px}
+ .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--bd)}
+ .tabs .seg{flex:1}
+ .tabs .seg button{padding:9px 12px;font-size:14px;gap:6px}
+ .toast{bottom:88px}
+ .brand p{display:none}
+}
+@media(max-width:420px){#printBtn span{display:none}#printBtn{padding:8px 10px}}
+
+/* ---------- motion ---------- */
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes popin{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- print: only the sheets ---------- */
+@media print{
+ html,body{height:auto!important;overflow:visible!important;background:#fff!important}
+ .top,.side,.tabs,.stage-bar,.empty,.sheet-label,.toast,.modal,#measure{display:none!important}
+ .app,.stage,.pages-outer,#pages,.sheet-wrap{display:block!important;height:auto!important;overflow:visible!important;background:none!important;padding:0!important;margin:0!important;gap:0!important;min-width:0!important}
+ #pages{zoom:1!important}
+ .sheet{box-shadow:none!important;animation:none!important;break-after:page;page-break-after:always}
+ .sheet-wrap:last-child .sheet{break-after:auto;page-break-after:auto}
+ *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
 </head>
 <body>
+<header class="top">
+ <div class="brand">
+  <svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="10" fill="#4255ff"/><g fill="none" stroke="#97a2ff" stroke-width=".9"><path d="M7 17h20M17 7v20" stroke-dasharray="2.857 2.857"/><path d="M7 7l20 20M27 7 7 27" stroke-dasharray="2.1757 2.1757"/></g><rect x="7" y="7" width="20" height="20" rx="1.5" fill="none" stroke="#fff" stroke-width="1.6"/></svg>
+  <div><h1>Chinese Grids</h1><p>Printable Chinese character practice sheets</p></div>
+ </div>
+ <button class="ghost icon" id="shareBtn" title="Copy a link to this worksheet" aria-label="Copy a link to this worksheet"><i data-ic="link"></i></button>
+ <button class="pri" id="printBtn" title="Print, or pick “Save as PDF” in the print dialog"><i data-ic="print"></i><span>Print / PDF</span></button>
+</header>
 
-<div class="left-panel">
-    <div class="left-header">
-        <h1> 📝  Hanzi Generator</h1>
-        <p>Create custom Chinese character worksheets</p>
-    </div>
-    <div class="left-content">
-        <div>
-            <label>Content</label>
-            <textarea id="textInput" placeholder="Enter Chinese characters..."></textarea>
-            <div class="char-count" id="charCount">0 characters</div>
-        </div>
+<main class="app">
+ <aside class="side" id="side" aria-label="Worksheet settings">
+  <section class="card">
+   <div class="modes" role="radiogroup" aria-label="Worksheet type" data-k="mode">
+    <button role="radio" data-v="chars"><span class="mz">字</span>Characters</button>
+    <button role="radio" data-v="text"><span class="mz">文</span>Text</button>
+    <button role="radio" data-v="exercise"><span class="mz">题</span>Questions</button>
+   </div>
+   <p class="mode-hint" id="modeHint"></p>
+  </section>
 
-        <div class="control-group">
-            <label>Mode</label>
-            <select id="genMode">
-                <option value="single">Single Character (Repeat)</option>
-                <option value="continuous">Continuous Text (Article)</option>
-                <option value="exercise">Exercise / Workbook</option>
-            </select>
-        </div>
+  <section class="card">
+   <label class="lab" for="txt" id="txtLabel">Characters</label>
+   <textarea id="txt" class="txt" spellcheck="false" autocomplete="off" lang="zh"></textarea>
+   <div class="meta"><span id="count" class="grow"></span><button class="ghost sm" id="clearBtn" title="Clear the text"><i data-ic="trash"></i><span>Clear</span></button></div>
+   <div class="chips" id="examples"></div>
+   <div class="hz" id="hz" hidden></div>
+  </section>
 
-        <div class="control-group">
-            <label>Display Options</label>
-            <div class="checkbox-row"><input type="checkbox" id="showPinyin" checked> <span>Show Pinyin</span></div>
-            <div class="checkbox-row"><input type="checkbox" id="showStroke" checked> <span>Show Stroke Order</span></div>
-            <div class="checkbox-row"><input type="checkbox" id="showDef" checked> <span>Show Translation</span></div>
-        </div>
+  <section class="card" id="practiceCard">
+   <h3><i data-ic="sliders"></i>Practice</h3>
+   <div class="set" data-show="chars"><span class="lbl">Split into</span>
+    <div class="seg" role="radiogroup" aria-label="Split into" data-k="split"><button role="radio" data-v="chars">Characters</button><button role="radio" data-v="words">Words</button></div></div>
+   <div class="set" data-show="chars"><span class="lbl">Tracing copies<span class="sub">Gray copies to write over</span></span>
+    <div class="step" data-k="traces" data-min="0" data-max="30"><button data-d="-1" aria-label="Fewer tracing copies">−</button><output></output><button data-d="1" aria-label="More tracing copies">+</button></div></div>
+   <div class="set" data-show="chars" id="fadeRow"><label for="fade">Fade the copies<span class="sub">Each copy a little lighter</span></label><input type="checkbox" class="sw" id="fade" data-k="fade"></div>
+   <div class="set" data-show="chars"><span class="lbl" id="rowsPerLbl">Rows per character</span>
+    <div class="step" data-k="rowsPer" data-min="1" data-max="6"><button data-d="-1" aria-label="Fewer rows">−</button><output></output><button data-d="1" aria-label="More rows">+</button></div></div>
+   <div class="set" data-show="chars"><label for="unique" id="uniqueLbl">Skip repeated characters</label><input type="checkbox" class="sw" id="unique" data-k="unique"></div>
+   <div class="set" data-show="text"><label for="breaks">Keep line breaks<span class="sub">Each line of your text starts a new row</span></label><input type="checkbox" class="sw" id="breaks" data-k="breaks"></div>
+   <div class="set" data-show="text"><span class="lbl">Punctuation</span>
+    <div class="seg" role="radiogroup" aria-label="Punctuation" data-k="punct"><button role="radio" data-v="corner">In corner</button><button role="radio" data-v="box">Own box</button></div></div>
+   <div class="set" data-show="text"><span class="lbl">Tracing rows<span class="sub">Gray copy under each line</span></span>
+    <div class="step" data-k="traceRows" data-min="0" data-max="4"><button data-d="-1" aria-label="Fewer tracing rows">−</button><output></output><button data-d="1" aria-label="More tracing rows">+</button></div></div>
+   <div class="set" data-show="text"><span class="lbl">Empty rows<span class="sub">Under each line</span></span>
+    <div class="step" data-k="blankRows" data-min="0" data-max="4"><button data-d="-1" aria-label="Fewer empty rows">−</button><output></output><button data-d="1" aria-label="More empty rows">+</button></div></div>
+   <div class="set" data-show="chars text" id="shadeRow"><span class="lbl">Tracing shade</span>
+    <div class="rng"><input type="range" data-k="shade" min="0.08" max="0.6" step="0.02" aria-label="Tracing shade"><output class="val" data-for="shade"></output></div></div>
+   <div class="set" data-show="chars text"><label for="fill">Fill the page<span class="sub">Add empty rows after your content</span></label><input type="checkbox" class="sw" id="fill" data-k="fill"></div>
+   <div class="set" data-show="exercise"><span class="lbl">Writing rows<span class="sub">Under each question</span></span>
+    <div class="step" data-k="exRows" data-min="1" data-max="6"><button data-d="-1" aria-label="Fewer writing rows">−</button><output></output><button data-d="1" aria-label="More writing rows">+</button></div></div>
+   <p class="hint" data-show="exercise">Every line becomes a question. To give one question several lines, start each question with a number: 1. 2. 3.</p>
+  </section>
 
-        <div class="control-group">
-            <label>Margins & Spacing</label>
-            <div style="margin-bottom:10px;">
-                <label style="font-size:12px; color:#bdc3c7;">Box Size</label>
-                <div class="slider-input-group"><input type="range" id="boxSize" min="6" max="20" step="0.5" value="10"><input type="number" id="boxSizeNum" min="6" max="20" step="0.5" value="10"></div>
-            </div>
-            
-            <div style="margin-bottom:10px;" id="shadowContainer">
-                <label style="font-size:12px; color:#bdc3c7;">Shadow Hanzi</label>
-                <div class="slider-input-group"><input type="range" id="shadowHanzi" min="0" max="15" step="1" value="1"><input type="number" id="shadowHanziNum" min="0" max="15" step="1" value="1"></div>
-            </div>
-            
-            <div style="margin-bottom:10px;">
-                <label style="font-size:12px; color:#bdc3c7;">Top Margin</label>
-                <div class="slider-input-group"><input type="range" id="marginTop" min="0" max="40" step="0.5" value="5.5"><input type="number" id="marginTopNum" min="0" max="40" step="0.5" value="5.5"></div>
-            </div>
-            <div style="margin-bottom:10px;">
-                <label style="font-size:12px; color:#bdc3c7;">Left Margin</label>
-                <div class="slider-input-group"><input type="range" id="marginLeft" min="0" max="40" step="0.5" value="6"><input type="number" id="marginLeftNum" min="0" max="40" step="0.5" value="6"></div>
-            </div>
+  <section class="card" data-show="chars text">
+   <h3><i data-ic="eye"></i>Show</h3>
+   <div class="set"><label for="showChars">Characters<span class="sub">Turn off for a dictation sheet: write from the pinyin</span></label><input type="checkbox" class="sw" id="showChars" data-k="showChars"></div>
+   <div class="set"><label for="pinyin">Pinyin</label><input type="checkbox" class="sw" id="pinyin" data-k="pinyin"></div>
+   <div class="set"><label for="tones">Tone colors<span class="sub"><span class="t1">mā</span> <span class="t2">má</span> <span class="t3">mǎ</span> <span class="t4">mà</span> <span class="t5">ma</span></span></label><input type="checkbox" class="sw" id="tones" data-k="tones"></div>
+   <div class="set" data-show="chars"><label for="strokes">Stroke order<span class="sub">Step by step, new stroke in red</span></label><input type="checkbox" class="sw" id="strokes" data-k="strokes"></div>
+   <div class="set" data-show="chars"><label for="meaning">Meaning</label><input type="checkbox" class="sw" id="meaning" data-k="meaning"></div>
+  </section>
 
-            <div style="margin-bottom:10px;">
-                <label style="font-size:12px; color:#bdc3c7;">Row Spacing</label>
-                <div class="slider-input-group"><input type="range" id="rowSpacing" min="5" max="25" step="0.5" value="14"><input type="number" id="rowSpacingNum" min="5" max="25" step="0.5" value="14"></div>
-            </div>
-            <div>
-                <label style="font-size:12px; color:#bdc3c7;">Column Spacing</label>
-                <div class="slider-input-group"><input type="range" id="colSpacing" min="0" max="5" step="0.5" value="0"><input type="number" id="colSpacingNum" min="0" max="5" step="0.5" value="0"></div>
-            </div>
-        </div>
+  <section class="card">
+   <h3><i data-ic="grid"></i>Grid</h3>
+   <div class="tiles" role="radiogroup" aria-label="Grid style" data-k="grid" id="tiles"></div>
+   <div class="set"><span class="lbl">Color</span>
+    <div class="sws" role="radiogroup" aria-label="Grid color" data-k="color" id="swatches"></div></div>
+   <div class="set"><span class="lbl">Guide lines</span><div class="rng"><input type="range" data-k="guide" min="0.1" max="1" step="0.05" aria-label="Guide line strength"><output class="val" data-for="guide"></output></div></div>
+   <div class="set"><span class="lbl">Box size</span><div class="rng"><input type="range" data-k="box" min="6" max="24" step="0.5" aria-label="Box size"><output class="val" data-for="box"></output></div></div>
+   <div class="set"><span class="lbl">Row gap</span><div class="rng"><input type="range" data-k="rowGap" min="0" max="12" step="0.5" aria-label="Row gap"><output class="val" data-for="rowGap"></output></div></div>
+   <div class="set"><span class="lbl">Column gap</span><div class="rng"><input type="range" data-k="colGap" min="0" max="5" step="0.5" aria-label="Column gap"><output class="val" data-for="colGap"></output></div></div>
+  </section>
 
-        <div class="control-group">
-            <label>Guides</label>
-            <select id="gridStyle" style="margin-bottom:10px;">
-                <option value="mi">米 (Rice Grid)</option>
-                <option value="cross">Cross (+)</option>
-                <option value="empty">Empty</option>
-            </select>
-            <div class="control-row">
-                <div class="control-col">
-                    <label style="font-size:12px; color:#bdc3c7;">Color</label>
-                    <input type="color" id="gridColor" value="#e74c3c">
-                </div>
-                <div class="control-col">
-                    <label style="font-size:12px; color:#bdc3c7;">Opacity</label>
-                    <input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.5">
-                </div>
-            </div>
-        </div>
+  <section class="card">
+   <h3><i data-ic="page"></i>Page</h3>
+   <div class="set"><span class="lbl">Paper</span>
+    <div class="seg" role="radiogroup" aria-label="Paper size" data-k="paper"><button role="radio" data-v="a4">A4</button><button role="radio" data-v="letter">Letter</button></div></div>
+   <div class="set"><span class="lbl">Margins</span><div class="rng"><input type="range" data-k="margin" min="4" max="25" step="0.5" aria-label="Page margins"><output class="val" data-for="margin"></output></div></div>
+   <div class="set col"><label for="title">Title on every page</label><input id="title" type="text" data-k="title" maxlength="120" placeholder="e.g. HSK 1 · Lesson 3" autocomplete="off"></div>
+   <div class="set"><label for="nameDate">Name and date line</label><input type="checkbox" class="sw" id="nameDate" data-k="nameDate"></div>
+   <div class="set"><label for="pageNums">Page numbers</label><input type="checkbox" class="sw" id="pageNums" data-k="pageNums"></div>
+  </section>
 
-        <div class="button-group">
-            <button class="secondary" onclick="clearText()">Clear</button>
-            <button onclick="downloadPDF()">Download PDF</button>
-        </div>
-        <div class="status" id="status"> 👈  Enter characters to see live preview</div>
-    </div>
+  <footer class="foot">
+   <p>Stroke order data from <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> through <a href="https://hanziwriter.org" target="_blank" rel="noopener">Hanzi Writer</a>. Pinyin by <a href="https://github.com/zh-lx/pinyin-pro" target="_blank" rel="noopener">pinyin-pro</a>. Meanings of words you don’t define come from Google Translate.</p>
+   <p>Your text and settings are saved in this browser. <button class="link" id="resetBtn">Reset settings</button></p>
+  </footer>
+ </aside>
+
+ <section class="stage" id="stage" aria-label="Preview">
+  <div class="stage-bar"><div class="pill">
+   <span class="status" id="status" role="status"></span>
+   <span class="sep"></span>
+   <button class="ghost icon" id="zOut" title="Zoom out" aria-label="Zoom out"><i data-ic="zout"></i></button>
+   <button class="ghost zoomv" id="zFit" title="Fit to width">100%</button>
+   <button class="ghost icon" id="zIn" title="Zoom in" aria-label="Zoom in"><i data-ic="zin"></i></button>
+  </div></div>
+  <div class="empty" id="empty" hidden>
+   <div class="ei"><i data-ic="book"></i></div>
+   <h2 id="emptyTitle">Start with some characters</h2>
+   <p id="emptyText">Type in the box on the left, or try an example. You can also print this page as blank grid paper.</p>
+   <div class="chips" id="emptyEx"></div>
+  </div>
+  <div class="pages-outer"><div id="pages"></div></div>
+ </section>
+</main>
+
+<nav class="tabs" aria-label="View">
+ <div class="seg" role="tablist">
+  <button role="tab" data-view="edit" aria-selected="true"><i data-ic="edit"></i>Edit</button>
+  <button role="tab" data-view="prev" aria-selected="false"><i data-ic="eye"></i><span id="tabPrev">Preview</span></button>
+ </div>
+</nav>
+
+<div class="modal" id="modal" hidden>
+ <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="mChar">
+  <div class="mhead">
+   <div class="mchar" id="mChar" lang="zh"></div>
+   <div class="mpy" id="mPy"></div>
+   <button class="ghost icon" id="mSay" title="Listen" aria-label="Listen"><i data-ic="spk"></i></button>
+   <span class="grow"></span>
+   <button class="ghost icon" id="mPrev" title="Previous character" aria-label="Previous character"><i data-ic="prev"></i></button>
+   <span class="mpos" id="mPos"></span>
+   <button class="ghost icon" id="mNext" title="Next character" aria-label="Next character"><i data-ic="next"></i></button>
+   <button class="ghost icon" id="mClose" title="Close" aria-label="Close"><i data-ic="x"></i></button>
+  </div>
+  <div class="mbody">
+   <div class="wcol">
+    <div class="wbox" id="wbox"><svg class="wg" id="wgrid" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="hw"></div><div class="nodata" id="nodata" hidden></div></div>
+    <div class="mact"><button id="mAnim"><i data-ic="play"></i>Animate</button><button class="pri" id="mQuiz"><i data-ic="pen"></i><span>Practice</span></button></div>
+    <div class="mstat" id="mStat" aria-live="polite"></div>
+   </div>
+   <dl class="mi" id="mInfo"></dl>
+  </div>
+ </div>
 </div>
 
-<div class="right-panel">
-    <div class="preview-container" id="preview">
-        <div class="empty-state"><h2>Preview Area</h2><p>Your worksheet will appear here as you type</p></div>
-    </div>
-</div>
+<svg id="defs" aria-hidden="true" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden"><defs id="defsG"></defs></svg>
+<div id="measure" class="ex-q" aria-hidden="true"></div>
+<noscript><p style="padding:20px">Chinese Grids needs JavaScript to draw your worksheets.</p></noscript>
 
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.4/dist/index.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.3/dist/hanzi-writer.min.js" defer></script>
 <script>
-    const { pinyin } = pinyinPro;
-    const MAX_ROWS = 20;
-    const PUNCTUATION_REGEX = /[，。、！？：；,.\?!:;“ ”" '（ ）( )]/;
-    let debounceTimer;
+'use strict';
+/* =====================================================================
+   Chinese Grids — printable Chinese character worksheets.
+   Everything runs in the browser: the sheets are drawn as SVG in
+   millimetres and printed with the browser's own print / Save as PDF.
+   ===================================================================== */
 
-    // Inputs
-    const textInput = document.getElementById('textInput');
-    const genModeInput = document.getElementById('genMode');
-    const preview = document.getElementById('preview');
-    const charCount = document.getElementById('charCount');
-    
-    const gridStyleInput = document.getElementById('gridStyle');
-    const gridColorInput = document.getElementById('gridColor');
-    const gridOpacityInput = document.getElementById('gridOpacity');
-    const rowSpacingInput = document.getElementById('rowSpacing');
-    const colSpacingInput = document.getElementById('colSpacing');
-    const marginTopInput = document.getElementById('marginTop');
-    const marginLeftInput = document.getElementById('marginLeft');
-    const boxSizeInput = document.getElementById('boxSize');
-    const shadowHanziInput = document.getElementById('shadowHanzi');
-    const shadowContainer = document.getElementById('shadowContainer');
-    
-    const rowSpacingNumInput = document.getElementById('rowSpacingNum');
-    const colSpacingNumInput = document.getElementById('colSpacingNum');
-    const marginTopNumInput = document.getElementById('marginTopNum');
-    const marginLeftNumInput = document.getElementById('marginLeftNum');
-    const boxSizeNumInput = document.getElementById('boxSizeNum');
-    const shadowHanziNumInput = document.getElementById('shadowHanziNum');
+/* ---------- small helpers ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const f3 = v => Math.round(v * 1000) / 1000;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const HAN = /\p{Script=Han}/u, PUN = /[\p{P}\p{S}]/u;
+const isHan = c => HAN.test(c);
+const isPunct = c => PUN.test(c);
+const MM = 96 / 25.4;            // CSS pixels per millimetre
+const INK = '#16181e';           // model characters
+const MAX_PAGES = 120;
 
-    const showPinyinInput = document.getElementById('showPinyin');
-    const showStrokeInput = document.getElementById('showStroke');
-    const showDefInput = document.getElementById('showDef');
+/* ---------- line icons (same set as 汉字 Cards / Stories) ---------- */
+const SV = (p, c) => `<svg class="ic${c ? ' ' + c : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I = {
+ print: SV('<path d="M7 9V4h10v5"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v6H7z"/>'),
+ trash: SV('<path d="M4 7h16"/><path d="M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2"/><path d="M6 7l.9 11.2A2 2 0 0 0 8.9 20h6.2a2 2 0 0 0 2-1.8L18 7"/><path d="M10 11v5M14 11v5"/>'),
+ x: SV('<path d="M6 6l12 12M18 6 6 18"/>'),
+ prev: SV('<path d="M15 18l-6-6 6-6"/>'),
+ next: SV('<path d="M9 6l6 6-6 6"/>'),
+ play: SV('<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>'),
+ pen: SV('<path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13 7l4 4"/>'),
+ edit: SV('<path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13 7l4 4"/>'),
+ spk: SV('<path d="M11 5 6.5 9H3.5v6h3L11 19z" fill="currentColor" stroke-width="1.6"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12"/>'),
+ zin: SV('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M8.5 11h5M11 8.5v5"/>'),
+ zout: SV('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M8.5 11h5"/>'),
+ sliders: SV('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'),
+ eye: SV('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>'),
+ grid: SV('<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/>'),
+ page: SV('<path d="M6.5 3h7.5l4.5 4.5V21h-12z"/><path d="M14 3v4.5h4.5"/>'),
+ book: SV('<path d="M12 6.5C10.5 5 8 4.5 4 4.5v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-14c-4 0-6.5.5-8 2z"/><path d="M12 6.5v14"/>'),
+ link: SV('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>'),
+};
 
-    function syncInputs(slider, numberInput) {
-        slider.addEventListener('input', () => { numberInput.value = slider.value; updateAndGenerate(); });
-        numberInput.addEventListener('input', () => {
-            const val = parseFloat(numberInput.value);
-            if (!isNaN(val) && val >= parseFloat(numberInput.min) && val <= parseFloat(numberInput.max)) {
-                slider.value = val;
-            }
-            updateAndGenerate();
-        });
+/* ---------- settings (saved in this browser) ---------- */
+const PAPER = {a4: {w: 210, h: 297, name: 'A4'}, letter: {w: 215.9, h: 279.4, name: 'Letter'}};
+const KEY = 'hanzi-writer:v2';
+const LETTER = /^(en-(us|ca|ph)|es-(us|mx|co|ve|cl|gt|cr|pa|sv|do|pr)|fil)\b/i;
+const DEF = {
+ mode: 'chars', text: '你好世界',
+ split: 'chars', traces: 3, fade: true, rowsPer: 1, unique: true, fill: true, shade: .3,
+ breaks: true, punct: 'corner', traceRows: 0, blankRows: 0,
+ exRows: 1,
+ showChars: true, pinyin: true, tones: false, strokes: true, meaning: true,
+ grid: 'mi', color: '#d64545', guide: .5, box: 10, rowGap: 1, colGap: 0,
+ paper: LETTER.test(navigator.language || '') ? 'letter' : 'a4',
+ margin: 8, title: '', nameDate: false, pageNums: true,
+};
+const BOOLS = ['fade', 'unique', 'fill', 'breaks', 'showChars', 'pinyin', 'tones', 'strokes', 'meaning', 'nameDate', 'pageNums'];
+function sanitize(o) {
+ const num = (v, a, b, d) => { v = +v; return Number.isFinite(v) ? clamp(v, a, b) : d; };
+ const int = (v, a, b, d) => Math.round(num(v, a, b, d));
+ const pick = (v, list, d) => list.includes(v) ? v : d;
+ const r = {
+  mode: pick(o.mode, ['chars', 'text', 'exercise'], DEF.mode),
+  text: typeof o.text === 'string' ? o.text : DEF.text,
+  split: pick(o.split, ['chars', 'words'], DEF.split),
+  traces: int(o.traces, 0, 30, DEF.traces), rowsPer: int(o.rowsPer, 1, 6, DEF.rowsPer), shade: num(o.shade, .08, .6, DEF.shade),
+  punct: pick(o.punct, ['corner', 'box'], DEF.punct),
+  traceRows: int(o.traceRows, 0, 4, 0), blankRows: int(o.blankRows, 0, 4, 0), exRows: int(o.exRows, 1, 6, 1),
+  grid: pick(o.grid, ['mi', 'tian', 'jiu', 'kou'], DEF.grid),
+  color: /^#[0-9a-f]{6}$/i.test(o.color) ? o.color.toLowerCase() : DEF.color,
+  guide: num(o.guide, .1, 1, DEF.guide), box: num(o.box, 6, 24, DEF.box),
+  rowGap: num(o.rowGap, 0, 12, DEF.rowGap), colGap: num(o.colGap, 0, 5, DEF.colGap),
+  paper: pick(o.paper, ['a4', 'letter'], DEF.paper), margin: num(o.margin, 4, 25, DEF.margin),
+  title: typeof o.title === 'string' ? o.title.slice(0, 120) : '',
+ };
+ for (const k of BOOLS) r[k] = typeof o[k] === 'boolean' ? o[k] : DEF[k];
+ return r;
+}
+let S = (() => { try { const o = JSON.parse(localStorage.getItem(KEY)); if (o && typeof o === 'object') return sanitize({...DEF, ...o}); } catch (e) {} return sanitize(DEF); })();
+let saveT = 0;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 250); }
+
+/* ---------- share links: the worksheet travels in the #fragment, which never reaches a server ---------- */
+const b64url = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+function shareURL() {
+ const o = {};
+ for (const k of Object.keys(DEF)) if (S[k] !== DEF[k]) o[k] = S[k];
+ o.text = S.text; o.paper = S.paper;
+ return location.href.split('#')[0] + '#s=' + b64url(new TextEncoder().encode(JSON.stringify(o)));
+}
+let sharedFrom = null;           // the settings we replaced when a shared link was opened
+function readShared() {
+ const m = location.hash.match(/^#s=([A-Za-z0-9_-]+)$/);
+ if (!m) return;
+ try {
+  const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/'));
+  const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+  if (o && typeof o === 'object') { sharedFrom = {...S}; S = sanitize({...DEF, ...o}); save(); }
+ } catch (e) {}
+ history.replaceState(null, '', location.pathname + location.search);
+}
+async function copyShare() {
+ const url = shareURL();
+ try { await navigator.clipboard.writeText(url); toast(url.length > 8000 ? 'Link copied. It is long because it holds the whole text.' : 'Link copied. It opens this exact worksheet.'); }
+ catch (e) { prompt('Copy this link:', url); }
+}
+
+/* ---------- stroke data (Make Me a Hanzi, via the Hanzi Writer CDN) ---------- */
+const STROKE_URL = c => `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/${encodeURIComponent(c)}.json`;
+const strokeCache = new Map();    // char -> data, or null when the character has no data
+const strokeWait = new Map();     // char -> pending promise
+const jobs = []; let running = 0;
+function pump() {
+ while (running < 6 && jobs.length) { const job = jobs.shift(); running++; job().finally(() => { running--; pump(); }); }
+}
+function getStrokes(c) {
+ if (strokeCache.has(c)) return Promise.resolve(strokeCache.get(c));
+ if (strokeWait.has(c)) return strokeWait.get(c);
+ const p = new Promise(done => {
+  jobs.push(() => fetch(STROKE_URL(c)).then(async r => {
+   if (r.ok) { const d = await r.json(); const ok = d && Array.isArray(d.strokes) && d.strokes.length ? d : null; strokeCache.set(c, ok); return ok; }
+   if (r.status === 404) strokeCache.set(c, null);    // no data for this character
+   return null;                                        // other errors: try again on the next render
+  }).catch(() => null).then(d => { strokeWait.delete(c); done(d); }));
+  pump();
+ });
+ strokeWait.set(c, p);
+ return p;
+}
+
+/* Glyphs become <symbol>s once, then every box just <use>s them. */
+const glyphIds = new Map();
+function ensureGlyph(c, d) {
+ if (glyphIds.has(c)) return;
+ const id = glyphIds.size; glyphIds.set(c, id);
+ const T = 'matrix(1 0 0 -1 0 900)';
+ let s = `<symbol id="g${id}" viewBox="0 0 1024 1024"><path transform="${T}" d="${d.strokes.join(' ')}"/></symbol>`;
+ d.strokes.forEach((p, j) => { s += `<symbol id="g${id}-${j}" viewBox="0 0 1024 1024"><path transform="${T}" d="${p}"/></symbol>`; });
+ $('#defsG').insertAdjacentHTML('beforeend', s);
+}
+
+/* ---------- meanings ---------- */
+// Character definitions: Make Me a Hanzi's dictionary (LGPL), loaded from the CDN at a fixed version.
+const DICT_URL = 'https://cdn.jsdelivr.net/gh/skishore/makemeahanzi@bddc96d41bef78427ed0e034e9f7e31d71fd1b92/dictionary.txt';
+let DICT = null, dictP = null;
+function loadDict() {
+ if (DICT) return Promise.resolve(DICT);
+ if (!dictP) dictP = fetch(DICT_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(t => {
+  const m = new Map();
+  for (const line of t.split('\n')) { if (!line) continue; try { const o = JSON.parse(line); m.set(o.character, o); } catch (e) {} }
+  return (DICT = m);
+ }).catch(() => { dictP = null; return null; });
+ return dictP;
+}
+// Words (and the rare character without a definition): Google Translate, cached in this browser.
+const WM_KEY = 'hanzi-writer:meanings';
+let WM = {}; try { WM = JSON.parse(localStorage.getItem(WM_KEY)) || {}; } catch (e) {}
+const wmWait = new Map(); let wmT = 0;
+function fetchMeaning(w) {
+ if (typeof WM[w] === 'string') return Promise.resolve(WM[w]);
+ if (wmWait.has(w)) return wmWait.get(w);
+ const p = fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&dt=bd&q=' + encodeURIComponent(w))
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => {
+   const out = [], add = t => { t = String(t || '').trim(); if (t && !out.some(x => x.toLowerCase() === t.toLowerCase())) out.push(t); };
+   add(d && d[0] && d[0][0] && d[0][0][0]);
+   for (const pos of (d && d[1]) || []) for (const t of (pos && pos[1] || []).slice(0, 3)) add(t);
+   const m = out.slice(0, 4).join(', ');
+   WM[w] = m; clearTimeout(wmT); wmT = setTimeout(() => { try { localStorage.setItem(WM_KEY, JSON.stringify(WM)); } catch (e) {} }, 500);
+   return m;
+  }).catch(() => '').finally(() => wmWait.delete(w));
+ wmWait.set(w, p);
+ return p;
+}
+function meaningNow(w) {
+ if ([...w].length === 1 && DICT) { const e = DICT.get(w); if (e && e.definition) return e.definition; }
+ return typeof WM[w] === 'string' ? WM[w] : '';
+}
+async function resolveMeaning(w) {
+ if ([...w].length === 1) { await loadDict(); const e = DICT && DICT.get(w); if (e && e.definition) return e.definition; }
+ return fetchMeaning(w);
+}
+
+/* ---------- pinyin ---------- */
+function pyArray(str) {           // one entry per code point; '' for anything that is not a Chinese character
+ const chars = Array.from(str), f = window.pinyinPro && window.pinyinPro.pinyin;
+ if (!f) return chars.map(() => '');
+ try { const a = f(str, {type: 'array'}); if (a.length === chars.length) return a.map((p, i) => isHan(chars[i]) && p !== chars[i] ? p : ''); } catch (e) {}
+ return chars.map(c => { if (!isHan(c)) return ''; try { const p = f(c); return p === c ? '' : p; } catch (e) { return ''; } });
+}
+const TONE_MARKS = [0x304, 0x301, 0x30c, 0x300].map(c => String.fromCharCode(c));   // ā á ǎ à
+function toneOf(s) {
+ const n = String(s).normalize('NFD'), i = TONE_MARKS.findIndex(m => n.includes(m));
+ return i < 0 ? 5 : i + 1;
+}
+const toneless = s => String(s).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/v/g, 'u').replace(/[^a-z]/g, '');
+const MARKS = {a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ'};
+function markSyl(syl, t) {      // "hao", 3 -> "hǎo"
+ syl = syl.replace(/v/g, 'ü').replace(/V/g, 'Ü');
+ if (t < 1 || t > 4) return syl;
+ const low = syl.toLowerCase();
+ let i = low.indexOf('a'); if (i < 0) i = low.indexOf('e'); if (i < 0) i = low.indexOf('ou');
+ if (i < 0) for (let k = low.length - 1; k >= 0; k--) if ('iouü'.includes(low[k])) { i = k; break; }
+ if (i < 0) return syl;
+ const m = MARKS[low[i]][t - 1];
+ return syl.slice(0, i) + (syl[i] !== low[i] ? m.toUpperCase() : m) + syl.slice(i + 1);
+}
+const numPinyin = s => s.replace(/([a-zA-ZüÜvV]+)([1-5])/g, (_, a, t) => markSyl(a, +t));
+const pyHTML = syl => syl.map(p => S.tones ? `<i class="t${toneOf(p)}">${esc(p)}</i>` : esc(p)).join('');
+
+/* ---------- reading the text ---------- */
+const SEPS = /^[\s=:：\-–—,，、;；|/·•]+|[\s,，、;；|/]+$/g;
+const PY_TOKEN = /^[a-zA-ZüÜvVāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙ']+[1-5]?$/;
+const HAS_TONE = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙ1-5]/;
+function splitRest(word, rest) { // "  péngyou  friend" -> {py, meaning}
+ const s = rest.replace(/[（(\[【]([^）)\]】]*)[）)\]】]/g, ' $1 ').replace(SEPS, '').trim();
+ if (!s) return {};
+ const toks = s.split(/\s+/), target = toneless(pyArray(word).join(''));
+ if (target) {               // pinyin that spells the word, typed with or without tones
+  let acc = '';
+  for (let k = 0; k < toks.length && k < 10; k++) {
+   acc += toneless(toks[k]);
+   if (acc === target) return {py: numPinyin(toks.slice(0, k + 1).join(' ')), meaning: toks.slice(k + 1).join(' ').replace(SEPS, '')};
+   if (!target.startsWith(acc)) break;
+  }
+ }
+ let k = 0;                  // pinyin with tone marks that reads differently (e.g. another reading)
+ while (k < toks.length && PY_TOKEN.test(toks[k]) && HAS_TONE.test(toks[k])) k++;
+ if (k) return {py: numPinyin(toks.slice(0, k).join(' ')), meaning: toks.slice(k).join(' ').replace(SEPS, '')};
+ return {meaning: s};
+}
+function makeEntry(word, userPy, meaning) {
+ const chars = Array.from(word), comp = pyArray(word);
+ let syl = comp;
+ if (userPy) {
+  const flat = Array.from(userPy.replace(/[\s']/g, '').normalize('NFC'));
+  if (comp.every(Boolean) && toneless(flat.join('')) === toneless(comp.join(''))) {
+   syl = []; let i = 0;                       // cut the typed pinyin where the syllables are
+   for (const c of comp) { const L = Array.from(toneless(c)).length; syl.push(flat.slice(i, i + L).join('')); i += L; }
+   if (i !== flat.length) syl = userPy.split(/\s+/);
+  } else syl = userPy.split(/\s+/);
+ }
+ return {word, chars, syl: syl.filter(Boolean), meaning: meaning || ''};
+}
+function parseChars(text) {
+ const out = [], seen = new Set();
+ if (S.split === 'chars') {
+  for (const c of text) {
+   if (!isHan(c)) continue;
+   if (S.unique) { if (seen.has(c)) continue; seen.add(c); }
+   out.push(makeEntry(c));
+  }
+  return out;
+ }
+ for (const line of text.split(/\r?\n/)) {
+  for (const m of line.matchAll(/(\p{Script=Han}+)([^\p{Script=Han}]*)/gu)) {
+   const word = m[1];
+   if (S.unique) { if (seen.has(word)) continue; seen.add(word); }
+   const r = splitRest(word, m[2]);
+   out.push(makeEntry(word, r.py, r.meaning));
+  }
+ }
+ return out;
+}
+const OPEN = '“‘（(《〈【「『〔［[{';
+const CLOSE = '”’）)》〉】」』〕］]}';
+const SOLO = '…—–～~·';                 // too wide for a corner: they get their own box
+function parseText(text) {
+ const lines = S.breaks ? text.split(/\r?\n/) : [text.replace(/\r?\n/g, '')];
+ const out = [];
+ for (const raw of lines) {
+  const line = raw.replace(/\s+/g, '');       // \s also covers the full-width space
+  if (!line) continue;
+  const chars = Array.from(line), py = S.pinyin ? pyArray(line) : [];
+  const cells = []; let open = '';
+  chars.forEach((c, i) => {
+   if (isHan(c)) { cells.push({k: 'han', ch: c, py: py[i] || '', tl: open}); open = ''; return; }
+   if (isPunct(c)) {
+    if (S.punct === 'box' || SOLO.includes(c)) { cells.push({k: 'pun', ch: c}); return; }
+    if (OPEN.includes(c)) { open += c; return; }
+    const prev = cells[cells.length - 1];
+    if (prev && prev.k !== 'pun') { if (CLOSE.includes(c)) prev.tr = (prev.tr || '') + c; else prev.br = (prev.br || '') + c; }
+    else cells.push({k: 'pun', ch: c});
+    return;
+   }
+   cells.push({k: 'oth', ch: c, tl: open}); open = '';
+  });
+  if (open) cells.push({k: 'pun', ch: open});
+  if (cells.length) out.push(cells);
+ }
+ return out;
+}
+function parseEx(text) {
+ const lines = text.replace(/\r\n?/g, '\n').split('\n');
+ const NUM = /^\s*(\d{1,3})\s*[.、)）:：]\s*/;
+ const out = [];
+ if (lines.some(l => NUM.test(l))) {
+  let cur = null;
+  for (const l of lines) {
+   const m = l.match(NUM);
+   if (m) { cur = {n: m[1] + '.', q: l.slice(m[0].length)}; out.push(cur); }
+   else if (cur) cur.q += '\n' + l;
+   else if (l.trim()) { cur = {n: '', q: l}; out.push(cur); }    // a heading before question 1
+  }
+  out.forEach(b => { b.q = b.q.replace(/\s+$/, ''); });
+ } else {
+  let i = 0;
+  for (const l of lines) if (l.trim()) out.push({n: ++i + '.', q: l.trim()});
+ }
+ return out;
+}
+function buildModel() {
+ const t = S.text;
+ if (S.mode === 'chars') { const entries = parseChars(t); return {mode: 'chars', entries, chars: entries.flatMap(e => e.chars), has: entries.length > 0}; }
+ if (S.mode === 'text') { const lines = parseText(t); return {mode: 'text', lines, chars: lines.flat().filter(c => c.k === 'han').map(c => c.ch), has: lines.length > 0}; }
+ const blocks = parseEx(t);
+ return {mode: 'exercise', blocks, chars: [], has: blocks.length > 0};
+}
+
+/* ---------- measuring text ---------- */
+let FONTS = {};
+const ctx2d = document.createElement('canvas').getContext('2d');
+const inkCache = new Map();
+function inkBox(str, font, weight = '') {      // ink bounds of str at 100px
+ const key = weight + '|' + font + '|' + str;
+ if (!inkCache.has(key)) {
+  ctx2d.font = `${weight} 100px ${font}`.trim();
+  const m = ctx2d.measureText(str);
+  inkCache.set(key, {l: m.actualBoundingBoxLeft || 0, r: m.actualBoundingBoxRight || m.width, a: m.actualBoundingBoxAscent || 70, d: m.actualBoundingBoxDescent || 0, w: m.width});
+ }
+ return inkCache.get(key);
+}
+const textW = (str, font, sizeMM, weight) => inkBox(str, font, weight).w / 100 * sizeMM;
+function measureQ(text, wMM, fsMM) {
+ const el = $('#measure');
+ el.style.width = wMM + 'mm'; el.style.fontSize = fsMM + 'mm'; el.textContent = text;
+ return el.getBoundingClientRect().height / MM;
+}
+
+/* ---------- page geometry (millimetres) ---------- */
+function geometry() {
+ const P = PAPER[S.paper], s = S.box, g = S.colGap, m = S.margin;
+ const n = Math.max(1, Math.floor((P.w - 2 * m + g) / (s + g) + 1e-9));
+ const gridW = n * s + (n - 1) * g;
+ const head = !!(S.title.trim() || S.nameDate), headH = 9;
+ return {W: P.w, H: P.h, name: P.name, s, g, n, gridW, m, head, headH,
+  x0: (P.w - gridW) / 2,
+  top: m + (head ? headH + 4 : 0),
+  bottom: P.h - m - (S.pageNums ? 6 : 0)};
+}
+
+/* ---------- layout: content -> pages ---------- */
+function layout(model, G) {
+ const pages = []; let pg, y = 0, truncated = false;
+ const {s, g, n} = G, gap = S.rowGap, pad = s * .07;
+ const newPage = () => { pg = {rows: [], ink: [], html: [], used: false}; pages.push(pg); y = G.top; };
+ const fits = h => y + h <= G.bottom + 1e-6;
+ const place = h => {
+  if (!fits(h) && pg.used) { if (pages.length >= MAX_PAGES) { truncated = true; return false; } newPage(); }
+  pg.used = true; return true;
+ };
+ const cx = j => G.x0 + j * (s + g);
+ const op = o => o < 1 ? ` fill-opacity="${f3(o)}"` : '';
+ const glyph = (c, j, yy, o = 1) => {
+  if (strokeCache.get(c)) pg.ink.push(`<use href="#g${glyphIds.get(c)}" x="${f3(cx(j) + pad)}" y="${f3(yy + pad)}" width="${f3(s - 2 * pad)}" height="${f3(s - 2 * pad)}"${op(o)}/>`);
+  else pg.ink.push(`<text class="k" x="${f3(cx(j) + s / 2)}" y="${f3(yy + s / 2)}" font-size="${f3(s * .78)}" text-anchor="middle" dominant-baseline="central"${op(o)}>${esc(c)}</text>`);
+ };
+ const corner = (str, j, yy, pos, o) => {
+  const fs = s * .42, k = fs / 100, b = inkBox(str, FONTS.zh), ins = s * .05, x = cx(j);
+  const tx = pos === 'tl' ? x + ins + b.l * k : x + s - ins - b.r * k;
+  const ty = pos === 'br' ? yy + s - ins - b.d * k : yy + ins + b.a * k;
+  pg.ink.push(`<text class="z" x="${f3(tx)}" y="${f3(ty)}" font-size="${f3(fs)}"${op(o)}>${esc(str)}</text>`);
+ };
+ const fill = band => {
+  if (!(S.fill || !model.has)) return;
+  while (fits(band + s)) { pg.rows.push(y + band); pg.used = true; y += band + s + gap; }
+ };
+ newPage();
+
+ if (model.mode === 'chars') {
+  const band = S.pinyin || (S.strokes && S.showChars) || S.meaning ? clamp(s * .42, 4, 8) : 0;
+  for (const e of model.entries) {
+   const L = e.chars.length, modelRows = Math.ceil(L / n), nRows = Math.max(S.rowsPer, modelRows);
+   const h = band + nRows * s + (nRows - 1) * g;
+   if (!place(h)) break;
+   if (band) pg.html.push(headHTML(e, G.x0, y, G.gridW, band));
+   const copies = modelRows === 1 ? clamp(Math.floor(n / L) - 1, 0, S.traces) : 0;
+   for (let r = 0; r < nRows; r++) {
+    const yy = y + band + r * (s + g);
+    pg.rows.push(yy);
+    if (!S.showChars) continue;                 // dictation sheet: boxes only
+    if (r < modelRows) e.chars.slice(r * n, (r + 1) * n).forEach((c, j) => glyph(c, j, yy));
+    if (r === 0) for (let t = 0; t < copies; t++) {
+     const o = S.fade && copies > 1 ? S.shade * (1 - .6 * t / (copies - 1)) : S.shade;
+     e.chars.forEach((c, j) => glyph(c, L * (t + 1) + j, yy, o));
     }
-
-    syncInputs(rowSpacingInput, rowSpacingNumInput);
-    syncInputs(colSpacingInput, colSpacingNumInput);
-    syncInputs(marginTopInput, marginTopNumInput);
-    syncInputs(marginLeftInput, marginLeftNumInput);
-    syncInputs(boxSizeInput, boxSizeNumInput);
-    syncInputs(shadowHanziInput, shadowHanziNumInput);
-
-    function updateAndGenerate() {
-        updateCharCount();
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(generatePreview, 300);
+   }
+   y += h + gap;
+  }
+  fill(band);
+ } else if (model.mode === 'text') {
+  const band = S.pinyin ? clamp(s * .42, 3.4, 7) : 0, k = 1 + S.traceRows + S.blankRows;
+  const fsPy = band * .64;
+  const cell = (c, j, yy, o, withPy) => {
+   const x = cx(j);
+   if (c.k === 'han') {
+    if (S.showChars) glyph(c.ch, j, yy, o);
+    if (withPy && c.py) {
+     const w = textW(c.py, FONTS.py, fsPy), fit = w > s * .96 ? ` textLength="${f3(s * .96)}" lengthAdjust="spacingAndGlyphs"` : '';
+     pg.ink.push(`<text class="p${S.tones ? ' t' + toneOf(c.py) : ''}" x="${f3(x + s / 2)}" y="${f3(yy - band * .3)}" font-size="${f3(fsPy)}" text-anchor="middle"${fit}>${esc(c.py)}</text>`);
     }
-
-    // --- HELPER to set values programmatically ---
-    function setVal(slider, numInput, val) {
-        slider.value = val;
-        numInput.value = val;
-    }
-
-    // --- UPDATED UI LOGIC FOR DEFAULTS ---
-    function updateUIForMode() {
-        const mode = genModeInput.value;
-
-        // 1. Shadow Hanzi Logic
-        if (mode === 'single') {
-            shadowContainer.classList.remove('disabled-control');
-            shadowHanziInput.disabled = false;
-            shadowHanziNumInput.disabled = false;
-            if (parseFloat(shadowHanziInput.value) === 0) {
-                setVal(shadowHanziInput, shadowHanziNumInput, 1);
-            }
-        } else {
-            shadowContainer.classList.add('disabled-control');
-            shadowHanziInput.disabled = true;
-            shadowHanziNumInput.disabled = true;
-            setVal(shadowHanziInput, shadowHanziNumInput, 0);
-        }
-
-        // 2. Margins & Spacing Logic
-        if (mode === 'exercise') {
-            // Exercise Defaults
-            setVal(boxSizeInput, boxSizeNumInput, 10);
-            setVal(marginTopInput, marginTopNumInput, 0);
-            setVal(marginLeftInput, marginLeftNumInput, 0);
-            setVal(rowSpacingInput, rowSpacingNumInput, 4);
-            setVal(colSpacingInput, colSpacingNumInput, 0);
-        } else {
-            // Single & Continuous Defaults
-            setVal(boxSizeInput, boxSizeNumInput, 10);
-            setVal(marginTopInput, marginTopNumInput, 5.5);
-            setVal(marginLeftInput, marginLeftNumInput, 6);
-            setVal(rowSpacingInput, rowSpacingNumInput, 14);
-            setVal(colSpacingInput, colSpacingNumInput, 0);
-        }
-
-        updateAndGenerate();
-    }
-
-    genModeInput.addEventListener('change', updateUIForMode);
-
-    [textInput, gridStyleInput, gridColorInput, gridOpacityInput, showPinyinInput, showStrokeInput, showDefInput].forEach(el => {
-        el.addEventListener('input', updateAndGenerate);
+   } else {
+    const cls = c.k === 'pun' ? 'z' : 'p', fs = c.k === 'pun' ? s * .72 : s * .6;
+    pg.ink.push(`<text class="${cls}" x="${f3(x + s / 2)}" y="${f3(yy + s / 2)}" font-size="${f3(fs)}" text-anchor="middle" dominant-baseline="central"${op(o)}>${esc(c.ch)}</text>`);
+   }
+   if (c.tl) corner(c.tl, j, yy, 'tl', o);
+   if (c.tr) corner(c.tr, j, yy, 'tr', o);
+   if (c.br) corner(c.br, j, yy, 'br', o);
+  };
+  outer: for (const cells of model.lines) {
+   for (let i = 0; i < cells.length; i += n) {
+    const h = band + k * s + (k - 1) * g;
+    if (!place(h)) break outer;
+    const yy = y + band;
+    for (let r = 0; r < k; r++) pg.rows.push(yy + r * (s + g));
+    cells.slice(i, i + n).forEach((c, j) => {
+     cell(c, j, yy, 1, true);
+     if (S.showChars) for (let t = 1; t <= S.traceRows; t++) cell(c, j, yy + t * (s + g), S.shade, false);
     });
+    y += h + gap;
+   }
+  }
+  fill(band);
+ } else {
+  const numW = 8, fs = clamp(s * .4, 3.6, 5), lh = fs * 1.45;
+  for (const b of model.blocks) {
+   const qw = G.gridW - (b.n ? numW : 0);
+   const qh = b.q.trim() ? measureQ(b.q, qw, fs) : (b.n ? lh : 0);
+   const rows = b.n ? S.exRows : 0;
+   const h = qh + (rows ? 1.8 + rows * s + (rows - 1) * g : 0);
+   if (h <= 0) continue;
+   if (!place(h)) break;
+   if (b.n) pg.html.push(`<div class="ex-n" style="left:${f3(G.x0)}mm;top:${f3(y)}mm;font-size:${f3(fs)}mm">${esc(b.n)}</div>`);
+   if (b.q.trim()) pg.html.push(`<div class="ex-q" style="left:${f3(G.x0 + (b.n ? numW : 0))}mm;top:${f3(y)}mm;width:${f3(qw)}mm;font-size:${f3(fs)}mm">${esc(b.q)}</div>`);
+   const yy = y + qh + 1.8;
+   for (let r = 0; r < rows; r++) pg.rows.push(yy + r * (s + g));
+   y += h + gap + 2.5;
+  }
+ }
+ return {pages, truncated};
+}
 
-    function updateCharCount() {
-        const text = textInput.value.replace(/[\r\n\s]/g, '');
-        charCount.textContent = `${text.length} characters`;
-    }
+/* The line above a character row: pinyin · stroke order · meaning. */
+function headHTML(e, x, y, w, band) {
+ const fsP = band * .62, fsM = band * .54;
+ let o = `<div class="hd" style="left:${f3(x)}mm;top:${f3(y)}mm;width:${f3(w)}mm;height:${f3(band)}mm">`, used = 0;
+ if (S.pinyin && e.syl.length) {
+  o += `<span class="py" style="font-size:${f3(fsP)}mm">${pyHTML(e.syl)}</span>`;
+  used += textW(e.syl.join(''), FONTS.py, fsP, 'bold') + 1.6;
+ }
+ if (S.strokes && S.showChars) {
+  const st = stepsSVG(e, band * .82, w - used - (S.meaning ? 30 : 0));
+  if (st) { o += st.html; used += st.w + 1.6; }
+ }
+ if (S.meaning) {
+  const m = e.meaning || meaningNow(e.word);
+  o += `<span class="mn" style="font-size:${f3(fsM)}mm"${e.meaning ? '' : ` data-w="${esc(e.word)}"`}>${esc(m)}</span>`;
+ }
+ return o + '</div>';
+}
+function stepsSVG(e, size, maxW) {
+ const GAP = 120, CGAP = 380;
+ let x = 0, body = '', any = false;
+ for (const c of e.chars) {
+  const d = strokeCache.get(c);
+  if (!d) continue;
+  const id = glyphIds.get(c);
+  if (any) x += CGAP - GAP;
+  any = true;
+  for (let i = 0; i < d.strokes.length; i++) {
+   body += `<rect x="${x + 16}" y="16" width="992" height="992" rx="56" fill="none" stroke="#e2e5ed" stroke-width="32"/><use href="#g${id}" x="${x}" width="1024" height="1024" fill="#dfe2e9"/>`;
+   for (let j = 0; j < i; j++) body += `<use href="#g${id}-${j}" x="${x}" width="1024" height="1024"/>`;
+   body += `<use href="#g${id}-${i}" x="${x}" width="1024" height="1024" fill="#d64545"/>`;
+   x += 1024 + GAP;
+  }
+ }
+ if (!any) return null;
+ const U = x - GAP;
+ let sz = size;
+ if (maxW > 0 && U / 1024 * sz > maxW) sz = Math.max(2.4, maxW * 1024 / U);
+ const w = U / 1024 * sz;
+ return {w, html: `<svg class="stp" viewBox="0 0 ${U} 1024" style="width:${f3(w)}mm;height:${f3(sz)}mm" fill="#2b2f3a" aria-hidden="true">${body}</svg>`};
+}
 
-    function clearText() {
-        textInput.value = '';
-        updateCharCount();
-        preview.innerHTML = '<div class="empty-state"><h2>Preview Area</h2><p>Your worksheet will appear here as you type</p></div>';
-    }
+/* ---------- painting pages ---------- */
+function gridPaths(rows, G) {
+ if (!rows.length) return '';
+ const {s, g, n, x0, gridW} = G, h = s / 2, t1 = s / 3, t2 = s * 2 / 3;
+ let b = '', d = '';
+ if (g === 0) {                        // shared borders: draw each line once
+  const ys = new Set();
+  for (const y of rows) { ys.add(f3(y)); ys.add(f3(y + s)); }
+  for (const y of ys) b += `M${f3(x0)} ${y}h${f3(gridW)}`;
+  for (const y of rows) for (let j = 0; j <= n; j++) b += `M${f3(x0 + j * s)} ${f3(y)}v${f3(s)}`;
+ }
+ // Guides are drawn from the centre outwards, so every line starts on a dash at the centre and
+ // ends on a whole dash at the edge. Each kind of line gets a dash pattern stretched to fit it exactly.
+ // Every guide is one full line whose dash pattern is centred on its midpoint:
+ // diagonals have a dash through the centre (together they form a small ×),
+ // straight lines have a gap there, so nothing runs into anything else.
+ let st = '', dg = '';
+ const line = (x1, y1, x2, y2) => `M${f3(x1)} ${f3(y1)}L${f3(x2)} ${f3(y2)}`;
+ for (const y of rows) for (let j = 0; j < n; j++) {
+  const x = x0 + j * (s + g), cy = y + h;
+  if (g) b += `M${f3(x)} ${f3(y)}h${f3(s)}v${f3(s)}h${f3(-s)}z`;
+  if (S.grid === 'mi' || S.grid === 'tian') st += line(x, cy, x + s, cy) + line(x + h, y, x + h, y + s);
+  if (S.grid === 'mi') dg += line(x, y, x + s, y + s) + line(x + s, y, x, y + s);
+  if (S.grid === 'jiu') for (const t of [t1, t2]) st += line(x, y + t, x + s, y + t) + line(x + t, y, x + t, y + s);
+ }
+ const wb = clamp(s * .024, .18, .4), wg = clamp(s * .006, .07, .14);
+ // solid, lighter colour instead of transparency: prints and exports cleanly
+ const mix = (hex, a) => '#' + [1, 3, 5].map(i => Math.round(255 - (255 - parseInt(hex.slice(i, i + 2), 16)) * a).toString(16).padStart(2, '0')).join('');
+ const gc = mix(S.color, S.guide);
+ // Dash = gap = a. The pattern is stretched a little so each line also ends on a dash at the border:
+ // straight lines: half = a/2 (half gap) + (2k-1)a ; diagonals: half = a/2 (half dash) + 2k·a
+ const guide = (d, len, centreDash) => {
+  if (!d) return '';
+  const half = len / 2, target = s * .034;
+  const k = Math.max(1, Math.round(centreDash ? (half / target - .5) / 2 : (half / target + .5) / 2));
+  const on = half / (centreDash ? 2 * k + .5 : 2 * k - .5), off = on, p = on + off;
+  const want = centreDash ? on / 2 : on + off / 2;
+  const offset = ((want - len / 2) % p + p) % p;
+  return `<path d="${d}" fill="none" stroke="${gc}" stroke-width="${f3(wg)}" stroke-dasharray="${f3(on)} ${f3(off)}" stroke-dashoffset="${f3(offset)}"/>`;
+ };
+ return guide(st, s, false) + guide(dg, s * Math.SQRT2, true)
+  + `<path d="${b}" fill="none" stroke="${S.color}" stroke-width="${f3(wb)}" stroke-linecap="square"/>`;
+}
+function pageHead(G) {
+ return `<div class="ph" style="left:${f3(G.x0)}mm;top:${f3(G.m)}mm;width:${f3(G.gridW)}mm;height:${G.headH}mm">`
+  + `<div class="ph-t">${esc(S.title.trim())}</div>`
+  + (S.nameDate ? `<div class="ph-f"><b>姓名</b>Name<i></i><b>日期</b>Date<i class="d"></i></div>` : '')
+  + '</div>';
+}
+function paint(pages, G) {
+ const total = pages.length;
+ $('#pages').innerHTML = pages.map((p, i) =>
+  `<div class="sheet-wrap"><div class="sheet" style="width:${G.W}mm;height:${G.H}mm">`
+  + `<svg width="${G.W}mm" height="${G.H}mm" viewBox="0 0 ${G.W} ${G.H}" aria-hidden="true">${gridPaths(p.rows, G)}<g fill="${INK}">${p.ink.join('')}</g></svg>`
+  + (G.head ? pageHead(G) : '') + p.html.join('')
+  + (S.pageNums ? `<div class="pf" style="top:${f3(G.H - G.m - 3.4)}mm">${i + 1} / ${total}</div>` : '')
+  + `</div><div class="sheet-label">Page ${i + 1} of ${total}</div></div>`).join('');
+}
+async function fillMeanings() {
+ const els = $$('#pages .mn[data-w]').filter(el => !el.textContent);
+ const words = [...new Set(els.map(el => el.dataset.w))];
+ await Promise.all(words.map(w => resolveMeaning(w).then(m => {
+  if (m) for (const el of els) if (el.dataset.w === w && el.isConnected) el.textContent = m;
+ })));
+}
 
-    async function generatePreview() {
-        const rawText = textInput.value;
-        const text = rawText.replace(/[\r\n\s]/g, '');
-        const mode = genModeInput.value;
-        
-        const gridConfig = { style: gridStyleInput.value, color: gridColorInput.value, opacity: gridOpacityInput.value };
-        const spacing = { row: parseFloat(rowSpacingInput.value), col: parseFloat(colSpacingInput.value) };
-        const margins = { top: parseFloat(marginTopInput.value), left: parseFloat(marginLeftInput.value) };
-        const boxSize = parseFloat(boxSizeInput.value);
-        const shadowCount = parseInt(shadowHanziInput.value);
-        const options = { pinyin: showPinyinInput.checked, stroke: showStrokeInput.checked, def: showDefInput.checked };
-        const numOffset = 0;
+/* ---------- render pipeline ---------- */
+let seq = 0, timer = 0, renderP = Promise.resolve(), meaningP = Promise.resolve(), lastG = null;
+function schedule(ms = 60) { clearTimeout(timer); timer = setTimeout(() => { renderP = render(); }, ms); }
+async function render() {
+ const my = ++seq;
+ const model = buildModel();
+ const need = [...new Set(model.chars)];
+ const missing = need.filter(c => !strokeCache.has(c));
+ if (missing.length) {
+  let done = 0, shown = false;
+  const show = () => { if (my === seq) { shown = true; setStatus(`<span class="spin"></span>Loading stroke data ${done} / ${missing.length}`); } };
+  const t = setTimeout(show, 180);
+  await Promise.all(missing.map(c => getStrokes(c).then(() => { done++; if (shown) show(); })));
+  clearTimeout(t);
+  if (my !== seq) return;
+ }
+ need.forEach(c => { const d = strokeCache.get(c); if (d) ensureGlyph(c, d); });
+ const G = lastG = geometry();
+ $('#pageRule').textContent = `@page{size:${G.W}mm ${G.H}mm;margin:0}`;
+ const {pages, truncated} = layout(model, G);
+ paint(pages, G);
+ applyZoom();
+ // status line
+ const nP = pages.length, miss = need.filter(c => strokeCache.get(c) === null);
+ let st = `<b>${nP} page${nP > 1 ? 's' : ''}</b><span class="st-x"> · ${G.name} · ${G.n} boxes per row</span>`;
+ if (miss.length) st += ` · <span class="warn" title="These have no stroke data and are shown in a regular font: ${esc(miss.join(' '))}">${miss.length} without stroke data</span>`;
+ if (truncated) st += ` · <span class="warn">only the first ${MAX_PAGES} pages</span>`;
+ setStatus(st);
+ $('#tabPrev').textContent = `Preview · ${nP}`;
+ $('#empty').hidden = model.has;
+ syncSteppers(G);
+ if (miss.length || need.length) updateChips();
+ meaningP = S.mode === 'chars' && S.meaning ? fillMeanings() : Promise.resolve();
+}
+function setStatus(h) { $('#status').innerHTML = h; }
 
-        if (!text && mode !== 'exercise') {
-            preview.innerHTML = '<div class="empty-state"><h2>Preview Area</h2><p>Your worksheet will appear here as you type</p></div>';
-            return;
-        }
+/* ---------- zoom ---------- */
+const ZOOMS = [.25, .33, .5, .67, .75, .9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+let zoomFit = true, zoom = 1;
+function applyZoom() {
+ const st = $('#stage'), P = PAPER[S.paper];
+ if (zoomFit) {
+  const avail = st.clientWidth - (innerWidth <= 860 ? 24 : 56);
+  if (avail > 50) zoom = clamp(avail / (P.w * MM), .25, 1.4);
+ }
+ $('#pages').style.zoom = zoom;
+ $('#zFit').textContent = Math.round(zoom * 100) + '%';
+ $('#zFit').title = zoomFit ? 'Fitted to the window' : 'Fit to width';
+}
+function zoomStep(dir) {
+ zoomFit = false;
+ const next = dir > 0 ? ZOOMS.find(z => z > zoom + .001) : [...ZOOMS].reverse().find(z => z < zoom - .001);
+ if (next) zoom = next;
+ applyZoom();
+}
 
-        preview.innerHTML = '';
-        let currentPageDiv = null;
-        let rowsInCurrentPage = 0;
+/* ---------- printing ---------- */
+async function doPrint() {
+ const btn = $('#printBtn');
+ btn.disabled = true;
+ try {
+  clearTimeout(timer); renderP = render();
+  await Promise.race([renderP, sleep(15000)]);
+  await Promise.race([meaningP, sleep(3000)]);
+ } finally { btn.disabled = false; }
+ let tip = false; try { tip = !localStorage.getItem('hanzi-writer:tip'); localStorage.setItem('hanzi-writer:tip', '1'); } catch (e) {}
+ if (tip) { toast('Tip: choose “Save as PDF” as the printer to download a PDF.', 'info'); await sleep(900); }
+ window.print();
+}
+let docTitle = document.title;
+addEventListener('beforeprint', () => { docTitle = document.title; document.title = S.title.trim() || 'Hanzi worksheet'; });
+addEventListener('afterprint', () => { document.title = docTitle; });
 
-        if (mode === 'exercise') {
-            currentPageDiv = document.createElement('div');
-            currentPageDiv.className = 'page';
-            currentPageDiv.style.paddingTop = margins.top + "mm";
-            currentPageDiv.style.paddingLeft = margins.left + "mm";
-            preview.appendChild(currentPageDiv);
+/* ---------- sidebar controls ---------- */
+const MODES = {
+ chars: {hint: 'Each character gets a row: a model to copy, gray copies to trace, then empty boxes.', label: 'Characters', ph: 'Type or paste Chinese characters, for example 你好世界'},
+ words: {label: 'Words', ph: 'One word per line. Add pinyin or a meaning if you like:\n朋友 péngyou friend\n学习 to study'},
+ text: {hint: 'Your text flows through the grid with pinyin on top, ready to copy box by box.', label: 'Text', ph: 'Paste a text or a poem, for example\n床前明月光，疑是地上霜。'},
+ exercise: {hint: 'Numbered questions, each followed by empty rows for the answer.', label: 'Questions', ph: 'One question per line, for example\n写一写你的名字。\n用“喜欢”造一个句子。'},
+};
+const EX = {
+ chars: [['Numbers', '一二三四五六七八九十'], ['Greetings', '你好谢谢再见'], ['Nature', '日月山水火木'], ['Family', '爸妈哥姐弟妹家人']],
+ words: [['Vocabulary', '朋友 péngyou friend\n学习 xuéxí to study\n老师 teacher\n喜欢 to like\n中国 China'], ['Greetings', '你好\n谢谢\n再见\n对不起\n没关系']],
+ text: [['静夜思 · Li Bai', '静夜思\n床前明月光，疑是地上霜。\n举头望明月，低头思故乡。'], ['春晓 · Meng Haoran', '春晓\n春眠不觉晓，处处闻啼鸟。\n夜来风雨声，花落知多少。'], ['Short story', '我叫小明，我是学生。\n我每天早上七点起床，吃早饭以后去学校。\n我喜欢学习汉语，因为汉字很有意思！']],
+ exercise: [['Sample questions', '1. 写一写你的名字。\n2. 用“喜欢”造一个句子。\n3. 写出三个有“氵”的字。\n4. 把这句话翻译成中文：I like tea.'], ['Dictation', '1. nǐ hǎo\n2. xièxie\n3. zàijiàn\n4. lǎoshī\n5. xuésheng']],
+};
+const GRIDS = [['mi', '米', 'Rice'], ['tian', '田', 'Field'], ['jiu', '九', 'Nine'], ['kou', '口', 'Plain']];
+const COLORS = [['#d64545', 'Red'], ['#1f9d63', 'Green'], ['#4255ff', 'Blue'], ['#8a93a8', 'Gray'], ['#1f2430', 'Black']];
+const FMT = {box: v => `${v} mm`, rowGap: v => `${v} mm`, colGap: v => `${v} mm`, margin: v => `${v} mm`, guide: v => `${Math.round(v * 100)}%`, shade: v => `${Math.round(v * 100)}%`};
 
-            const blocks = rawText.split(/(?=^\d+\.)/gm).map(b => b.trim()).filter(b => b);
-            
-            for (let block of blocks) {
-                const match = block.match(/^(\d+\.)\s*([\s\S]*)/);
-                let numberPart = "";
-                let textPart = block;
-                if (match) { numberPart = match[1]; textPart = match[2]; }
+function tileSVG(kind) {
+ const g = {mi: 'M2 20h36M20 2v36M2 2l36 36M38 2 2 38', tian: 'M2 20h36M20 2v36', jiu: 'M2 14h36M2 26h36M14 2v36M26 2v36', kou: ''}[kind];
+ return `<svg viewBox="0 0 40 40" aria-hidden="true">${g ? `<path d="${g}" stroke="currentColor" stroke-width="1" stroke-dasharray="2.2 1.8" opacity=".75" fill="none"/>` : ''}<rect x="2" y="2" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+}
+function buildStatic() {
+ $$('[data-ic]').forEach(el => { el.outerHTML = I[el.dataset.ic] || ''; });
+ $('#tiles').innerHTML = GRIDS.map(([k, z, name]) => `<button class="tile" role="radio" data-v="${k}" title="${name} grid (${z}字格)">${tileSVG(k)}<span>${name}</span></button>`).join('');
+ $('#swatches').innerHTML = COLORS.map(([c, name]) => `<button class="swc" role="radio" data-v="${c}" style="--c:${c}" title="${name}" aria-label="${name}"></button>`).join('')
+  + `<label class="swc custom" title="Any color"><input type="color" data-k="color" aria-label="Pick any color"></label>`;
+}
+function syncUI() {
+ $$('[data-k]').forEach(el => {
+  const k = el.dataset.k, v = S[k];
+  if (el.matches('.modes,.seg,.tiles,.sws')) el.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === String(v))));
+  else if (el.classList.contains('step')) { /* see syncSteppers */ }
+  else if (el.type === 'checkbox') el.checked = !!v;
+  else if (el.type === 'range') { el.value = v; rangeFill(el); }
+  else if (el.type === 'color') el.value = v;
+  else if (el.tagName === 'INPUT' && document.activeElement !== el) el.value = v;
+ });
+ $$('output[data-for]').forEach(o => { o.textContent = FMT[o.dataset.for](S[o.dataset.for]); });
+ syncSteppers(lastG || geometry());
+ // what is visible depends on the mode
+ $$('[data-show]').forEach(el => { el.hidden = !el.dataset.show.split(' ').includes(S.mode); });
+ const words = S.mode === 'chars' && S.split === 'words';
+ const M = MODES[words ? 'words' : S.mode];
+ $('#modeHint').textContent = MODES[S.mode].hint;
+ $('#txtLabel').textContent = M.label;
+ $('#txt').placeholder = M.ph;
+ $('#rowsPerLbl').textContent = words ? 'Rows per word' : 'Rows per character';
+ $('#uniqueLbl').textContent = words ? 'Skip repeated words' : 'Skip repeated characters';
+ $('#fadeRow').hidden = S.mode !== 'chars' || S.traces < 2 || !S.showChars;
+ $('#shadeRow').hidden = !S.showChars || !((S.mode === 'chars' && S.traces > 0) || (S.mode === 'text' && S.traceRows > 0));
+ $('#tones').disabled = !S.pinyin;
+ $('#strokes').disabled = !S.showChars;
+ // grid colors
+ $('#tiles').style.setProperty('--gc', S.color);
+ const custom = $('.swc.custom'), preset = COLORS.some(([c]) => c === S.color);
+ custom.classList.toggle('on', !preset); custom.style.setProperty('--c', S.color);
+ custom.setAttribute('aria-checked', String(!preset));
+ // row separators only between visible rows
+ $$('.side .card').forEach(card => { let first = true; card.querySelectorAll(':scope > .set').forEach(r => { if (r.hidden) return; r.classList.toggle('sep', !first); first = false; }); });
+ renderExamples();
+ updateCount();
+}
+function syncSteppers(G) {
+ $$('.step[data-k]').forEach(el => {
+  const k = el.dataset.k, max = stepMax(el, G), v = Math.min(S[k], max);
+  el.querySelector('output').textContent = v;
+  el.querySelector('[data-d="-1"]').disabled = v <= +el.dataset.min;
+  el.querySelector('[data-d="1"]').disabled = v >= max;
+ });
+}
+function stepMax(el, G) { return el.dataset.k === 'traces' ? Math.max(0, (G || geometry()).n - 1) : +el.dataset.max; }
+function rangeFill(el) { el.style.setProperty('--p', ((el.value - el.min) / (el.max - el.min) * 100) + '%'); }
+function set(k, v) {
+ if (S[k] === v) return;
+ S[k] = v;
+ save();
+ if (k in FMT || k === 'title') {           // sliders and the title: keep it light while dragging / typing
+  const o = $(`output[data-for="${k}"]`); if (o) o.textContent = FMT[k](v);
+  if (k === 'box' || k === 'colGap' || k === 'margin') syncSteppers(geometry());
+  if (k === 'guide' && !$('#modal').hidden) drawWriterGrid();
+  schedule(k === 'title' ? 150 : 50);
+  return;
+ }
+ if (k === 'mode' || k === 'split') updateChips();
+ syncUI();
+ if ((k === 'grid' || k === 'color') && !$('#modal').hidden) drawWriterGrid();
+ schedule(30);
+}
+function renderExamples() {
+ const list = S.mode === 'chars' ? (S.split === 'words' ? EX.words : EX.chars) : EX[S.mode];
+ const chips = list.map((x, i) => `<button class="chip" data-ex="${i}">${esc(x[0])}</button>`).join('');
+ $('#examples').innerHTML = `<span class="lab2">Try:</span>${chips}`;
+ $('#emptyEx').innerHTML = chips;
+ $('#emptyTitle').textContent = S.mode === 'exercise' ? 'Write some questions' : S.mode === 'text' ? 'Paste a text to copy' : 'Start with some characters';
+ $('#emptyText').textContent = S.mode === 'exercise' ? 'Type them in the box on the left, or try an example.' : 'Type in the box on the left, or try an example. You can also print this page as blank grid paper.';
+}
+function loadExample(i) {
+ const list = S.mode === 'chars' ? (S.split === 'words' ? EX.words : EX.chars) : EX[S.mode];
+ if (list[i]) setText(list[i][1], 'Example loaded');
+}
+function setText(t, msg) {
+ const prev = S.text;
+ S.text = t; $('#txt').value = t;
+ save(); updateCount(); updateChips(); schedule(0);
+ if (msg && prev.trim() && prev !== t) toast(msg, '', {label: 'Undo', fn: () => setText(prev)});
+}
+function updateCount() {
+ const t = S.text;
+ let s;
+ if (S.mode === 'exercise') { const n = parseEx(t).filter(b => b.n).length; s = n ? `${n} question${n > 1 ? 's' : ''}` : 'No questions yet'; }
+ else if (S.mode === 'chars' && S.split === 'words') { const n = parseChars(t).length; s = n ? `${n} word${n > 1 ? 's' : ''}` : 'No words yet'; }
+ else {
+  const han = [...t].filter(isHan), u = new Set(han).size;
+  s = han.length ? `${han.length} character${han.length > 1 ? 's' : ''}${u < han.length ? ` · ${u} different` : ''}` : 'No characters yet';
+  if (S.mode === 'text' && han.length) { const L = t.split(/\r?\n/).filter(l => l.trim()).length; if (L > 1) s += ` · ${L} lines`; }
+ }
+ $('#count').textContent = s;
+ $('#clearBtn').disabled = !t;
+}
 
-                const wrapper = document.createElement('div');
-                wrapper.className = 'exercise-block';
-                wrapper.style.marginBottom = spacing.row + "mm";
-                wrapper.style.width = (boxSize * 20 + 15) + "mm"; 
+/* ---------- character chips ---------- */
+let chipList = [], chipsAll = false;
+function updateChips() {
+ const set = new Set(); for (const c of S.text) if (isHan(c)) set.add(c);
+ const list = chipList = [...set], el = $('#hz');
+ el.hidden = !list.length;
+ if (!list.length) { el.innerHTML = ''; return; }
+ const LIM = 48, shown = chipsAll ? list : list.slice(0, LIM);
+ el.innerHTML = `<p class="hz-h">Tap a character to see how it’s written</p><div class="hz-l">`
+  + shown.map((c, i) => { const p = pyArray(c)[0] || '', miss = strokeCache.get(c) === null;
+   return `<button class="hzc${miss ? ' miss' : ''}" data-hz="${i}" title="${esc(p)}${miss ? ' · no stroke data' : ''}" aria-label="${esc(c)} ${esc(p)}${miss ? ', no stroke data' : ''}"><span class="zh" aria-hidden="true">${esc(c)}</span><small aria-hidden="true">${esc(p)}</small></button>`; }).join('')
+  + (list.length > LIM ? `<button class="chip hz-more" data-more>${chipsAll ? 'Show fewer' : `+${list.length - LIM} more`}</button>` : '') + '</div>';
+}
 
-                const isDoubleDigit = numberPart.length > 2;
-                const leftPos = isDoubleDigit ? "8mm" : "10mm";
+/* ---------- character card: stroke animation + writing practice ---------- */
+let card = {list: [], i: 0}, writer = null, wSize = 0, lastFocus = null;
+function openCard(list, i) {
+ lastFocus = document.activeElement;
+ card = {list, i};
+ $('#modal').hidden = false;
+ drawWriterGrid();
+ showCard();
+ setTimeout(() => $('#mClose').focus(), 30);
+}
+function closeCard() {
+ if (writer) try { writer.cancelQuiz(); } catch (e) {}
+ try { speechSynthesis.cancel(); } catch (e) {}
+ $('#modal').hidden = true;
+ if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+}
+function drawWriterGrid() {
+ const c = S.color, o = Math.max(.35, S.guide);
+ const g = {mi: 'M0 50h100M50 0v100M0 0l100 100M100 0 0 100', tian: 'M0 50h100M50 0v100', jiu: 'M0 33.33h100M0 66.67h100M33.33 0v100M66.67 0v100', kou: ''}[S.grid];
+ $('#wgrid').innerHTML = (g ? `<path d="${g}" stroke="${c}" stroke-width="1" stroke-dasharray="5 4" opacity="${o}" fill="none" vector-effect="non-scaling-stroke"/>` : '')
+  + `<rect x="0" y="0" width="100" height="100" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+}
+function stat(msg, cls = '') { const el = $('#mStat'); el.textContent = msg; el.className = 'mstat' + (cls ? ' ' + cls : ''); }
+function quizLabel(again) { $('#mQuiz span').textContent = again ? 'Again' : 'Practice'; }
+async function showCard() {
+ const c = card.list[card.i];
+ $('#mPos').textContent = card.list.length > 1 ? `${card.i + 1} / ${card.list.length}` : '';
+ $('#mPrev').hidden = $('#mNext').hidden = card.list.length < 2;
+ $('#mPrev').disabled = card.i === 0;
+ $('#mNext').disabled = card.i === card.list.length - 1;
+ $('#mChar').textContent = c;
+ const py = pyArray(c)[0] || '';
+ $('#mPy').innerHTML = py ? `<span class="t${toneOf(py)}">${esc(py)}</span>` : '';
+ quizLabel(false); stat('');
+ renderInfo(c);
+ const size = Math.round(clamp(innerWidth - 84, 180, 260));
+ $('#wbox').style.width = $('#wbox').style.height = size + 'px';
+ const d = await getStrokes(c);
+ if (card.list[card.i] !== c || $('#modal').hidden) return;
+ const ok = !!(d && window.HanziWriter);
+ $('#hw').hidden = !ok; $('#nodata').hidden = ok;
+ $('#mAnim').disabled = $('#mQuiz').disabled = !ok;
+ if (!ok) {
+  $('#nodata').innerHTML = `<div><b>${esc(c)}</b>${d ? 'Animation is not available offline.' : 'No stroke order data for this character.'}</div>`;
+  if (writer) try { writer.cancelQuiz(); } catch (e) {}
+  return;
+ }
+ if (!writer) {
+  writer = HanziWriter.create('hw', c, {
+   width: size, height: size, padding: Math.round(size * .07),
+   strokeColor: '#1f2430', radicalColor: '#4255ff', outlineColor: '#e2e5ee', highlightColor: '#7c8cff',
+   drawingColor: '#4255ff', drawingWidth: 5, highlightCompleteColor: '#1f9d63',
+   strokeAnimationSpeed: 1.1, delayBetweenStrokes: 260, showHintAfterMisses: 2,
+   charDataLoader: (ch, ok2, bad) => { getStrokes(ch).then(x => x ? ok2(x) : bad(new Error('no data'))); },
+  });
+  wSize = size;
+ } else {
+  if (size !== wSize) { writer.updateDimensions({width: size, height: size, padding: Math.round(size * .07)}); wSize = size; }
+  writer.setCharacter(c);
+ }
+ animate();
+}
+function animate() {
+ const c = card.list[card.i], d = strokeCache.get(c);
+ if (!writer || !d) return;
+ quizLabel(false);
+ stat('Watch the stroke order…');
+ writer.showOutline(); writer.showCharacter({duration: 0});
+ writer.animateCharacter({onComplete: r => { if (r && r.canceled) return; if (card.list[card.i] === c) stat(`${d.strokes.length} stroke${d.strokes.length > 1 ? 's' : ''} · the radical is drawn in blue`); }});
+}
+function practice() {
+ const c = card.list[card.i], d = strokeCache.get(c);
+ if (!writer || !d) return;
+ const n = d.strokes.length;
+ quizLabel(false);
+ stat(`Write it yourself · stroke 1 of ${n}`);
+ writer.quiz({
+  onCorrectStroke: r => { if (r.strokesRemaining) stat(`Good · stroke ${n - r.strokesRemaining + 1} of ${n}`, 'ok'); },
+  onMistake: r => stat(r.mistakesOnStroke >= 2 ? 'Follow the hint that is flashing' : `Not quite · try stroke ${r.strokeNum + 1} again`, 'bad'),
+  onComplete: r => { stat(r.totalMistakes ? `Done · ${r.totalMistakes} mistake${r.totalMistakes > 1 ? 's' : ''}` : 'Perfect · no mistakes', 'ok'); quizLabel(true); },
+ });
+}
+function formation(e) {
+ const et = e && e.etymology;
+ if (!et) return '';
+ if (et.type === 'pictophonetic') {
+  const parts = [];
+  if (et.semantic) parts.push(`meaning from <span class="zh">${esc(et.semantic)}</span>${et.hint ? ` (${esc(et.hint)})` : ''}`);
+  if (et.phonetic) parts.push(`sound from <span class="zh">${esc(et.phonetic)}</span>`);
+  const s = parts.join(', ');
+  return s ? s[0].toUpperCase() + s.slice(1) : '';
+ }
+ const kind = {pictographic: 'Pictograph', ideographic: 'Ideograph'}[et.type] || '';
+ return [kind, esc(et.hint || '')].filter(Boolean).join(' · ');
+}
+async function renderInfo(c) {
+ const box = $('#mInfo');
+ const draw = mean => {
+  const e = DICT && DICT.get(c), d = strokeCache.get(c), rows = [];
+  rows.push(['Meaning', mean != null ? (esc(mean) || '<span class="muted">—</span>') : '<span class="muted">Looking it up…</span>']);
+  const rd = (e && e.pinyin) || [];
+  if (rd.length > 1) rows.push(['Readings', rd.map(p => `<span class="t${toneOf(p)}">${esc(p)}</span>`).join(', ')]);
+  if (d) rows.push(['Strokes', String(d.strokes.length)]);
+  if (e && e.radical) rows.push(['Radical', e.radical === c ? 'This character is a radical' : `<span class="zh">${esc(e.radical)}</span>`]);
+  const f = formation(e); if (f) rows.push(['How it is built', f]);
+  box.innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+ };
+ draw(meaningNow(c) || null);
+ const m = await resolveMeaning(c);
+ if (card.list[card.i] === c && !$('#modal').hidden) draw(m || '');
+}
+function say(t) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'zh-CN'; u.rate = .8; speechSynthesis.speak(u); } catch (e) {} }
 
-                const numCol = document.createElement('div');
-                numCol.className = 'exercise-number';
-                numCol.innerText = numberPart;
-                numCol.style.top = (10 + numOffset) + "mm"; 
-                numCol.style.left = leftPos;
-                
-                wrapper.appendChild(numCol);
+/* ---------- toast (from 汉字 Stories) ---------- */
+let toastT = 0;
+function toast(msg, kind = '', act) {
+ $$('.toast').forEach(t => t.remove());
+ clearTimeout(toastT);
+ const t = document.createElement('div');
+ t.className = 'toast' + (kind ? ' ' + kind : ''); t.setAttribute('role', 'status');
+ t.innerHTML = `<span>${esc(msg)}</span>` + (act ? `<button>${esc(act.label)}</button>` : '');
+ if (act) t.querySelector('button').onclick = () => { act.fn(); t.remove(); };
+ document.body.appendChild(t);
+ requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('on')));
+ toastT = setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); }, act ? 6500 : 3600);
+}
 
-                const contentCol = document.createElement('div');
-                contentCol.className = 'exercise-content';
-                
-                const header = document.createElement('div');
-                header.className = 'exercise-header';
-                header.innerText = textPart;
-                contentCol.appendChild(header);
+/* ---------- events ---------- */
+function setView(v) {
+ document.body.classList.toggle('v-prev', v === 'prev');
+ $$('.tabs [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+ scrollTo(0, 0);
+ if (v === 'prev') requestAnimationFrame(applyZoom);
+}
+function bind() {
+ document.addEventListener('click', e => {
+  const t = e.target;
+  const opt = t.closest('[data-v]');
+  if (opt && opt.closest('[data-k]')) { set(opt.closest('[data-k]').dataset.k, opt.dataset.v); return; }
+  const st = t.closest('.step [data-d]');
+  if (st) { const el = st.closest('.step'), k = el.dataset.k, max = stepMax(el, lastG); set(k, clamp(Math.min(S[k], max) + +st.dataset.d, +el.dataset.min, max)); return; }
+  const ex = t.closest('[data-ex]'); if (ex) { loadExample(+ex.dataset.ex); return; }
+  const hz = t.closest('[data-hz]'); if (hz) { openCard(chipList, +hz.dataset.hz); return; }
+  if (t.closest('[data-more]')) { chipsAll = !chipsAll; updateChips(); return; }
+  const tab = t.closest('[data-view]'); if (tab) { setView(tab.dataset.view); return; }
+ });
+ document.addEventListener('input', e => {
+  const el = e.target, k = el.dataset.k;
+  if (!k) return;
+  if (el.type === 'checkbox') set(k, el.checked);
+  else if (el.type === 'range') { rangeFill(el); set(k, +el.value); }
+  else if (el.type === 'color') set(k, el.value.toLowerCase());
+  else set(k, el.value);
+ });
+ $('#txt').addEventListener('input', e => { S.text = e.target.value; save(); updateCount(); updateChips(); schedule(S.text.length > 3000 ? 400 : 160); });
+ $('#clearBtn').onclick = () => { setText('', 'Text cleared'); $('#txt').focus(); };
+ $('#printBtn').onclick = doPrint;
+ $('#shareBtn').onclick = copyShare;
+ $('#resetBtn').onclick = () => {
+  if (!confirm('Reset all settings to the defaults? Your text stays.')) return;
+  S = sanitize({...DEF, text: S.text}); save(); syncUI(); schedule(0); toast('Settings reset');
+ };
+ $('#zIn').onclick = () => zoomStep(1);
+ $('#zOut').onclick = () => zoomStep(-1);
+ $('#zFit').onclick = () => { zoomFit = true; applyZoom(); };
+ let rz = 0; addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(applyZoom); });
+ // character card
+ $('#mClose').onclick = closeCard;
+ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeCard(); });
+ $('#mPrev').onclick = () => { if (card.i > 0) { card.i--; showCard(); } };
+ $('#mNext').onclick = () => { if (card.i < card.list.length - 1) { card.i++; showCard(); } };
+ $('#mAnim').onclick = animate;
+ $('#mQuiz').onclick = practice;
+ $('#mSay').onclick = () => say(card.list[card.i]);
+ document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'p') { e.preventDefault(); doPrint(); return; }
+  if ($('#modal').hidden) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeCard(); }
+  else if (e.key === 'ArrowLeft' && !e.target.closest('input,textarea')) $('#mPrev').click();
+  else if (e.key === 'ArrowRight' && !e.target.closest('input,textarea')) $('#mNext').click();
+  else if (e.key === 'Tab') {                       // keep focus inside the card
+   const f = $$('#modal button:not([disabled]):not([hidden])').filter(b => b.offsetParent);
+   if (!f.length) return;
+   const i = f.indexOf(document.activeElement);
+   if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+   else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+  }
+ });
+}
 
-                const row = document.createElement('div');
-                row.className = 'practice-row';
-                for(let k=0; k<20; k++) {
-                    createBox(row, null, null, null, gridConfig, boxSize);
-                }
-                contentCol.appendChild(row);
-
-                wrapper.appendChild(contentCol);
-                currentPageDiv.appendChild(wrapper);
-            }
-            return; 
-        }
-
-        let displayItems = [];
-        
-        if (mode === 'single') {
-            for (let char of text) {
-                if (!PUNCTUATION_REGEX.test(char)) {
-                    displayItems.push({ char: char, punc: null });
-                }
-            }
-        } else {
-            for (let char of text) {
-                if (PUNCTUATION_REGEX.test(char)) {
-                    if (displayItems.length > 0) {
-                        displayItems[displayItems.length - 1].punc = char;
-                    } 
-                } else {
-                    displayItems.push({ char: char, punc: null });
-                }
-            }
-        }
-
-        if (mode === 'single') {
-            for (let i = 0; i < displayItems.length; i++) {
-                const item = displayItems[i]; 
-
-                if (currentPageDiv === null || rowsInCurrentPage >= MAX_ROWS) {
-                    currentPageDiv = document.createElement('div');
-                    currentPageDiv.className = 'page';
-                    preview.appendChild(currentPageDiv);
-                    rowsInCurrentPage = 0;
-                }
-
-                const currentTop = margins.top + (rowsInCurrentPage * spacing.row);
-                const block = document.createElement('div');
-                block.className = 'char-block';
-                block.style.left = margins.left + "mm";
-                block.style.top = currentTop + "mm";
-                block.style.height = boxSize + "mm";
-                currentPageDiv.appendChild(block);
-
-                const header = document.createElement('div');
-                header.className = 'header-row';
-                if (rowsInCurrentPage === 0) header.classList.add('first-row-special');
-                
-                if (options.pinyin) {
-                    const p = document.createElement('span');
-                    p.className = 'pinyin'; p.innerText = pinyin(item.char); header.appendChild(p);
-                }
-                
-                let steps = null;
-                if (options.stroke) {
-                    steps = document.createElement('div'); steps.className = 'stroke-steps-container'; header.appendChild(steps);
-                }
-                let defBox = null;
-                if (options.def) {
-                    defBox = document.createElement('div'); defBox.className = 'definition-box'; defBox.innerText = "..."; header.appendChild(defBox);
-                }
-                block.appendChild(header);
-
-                const row = document.createElement('div');
-                row.className = 'practice-row';
-                row.style.gap = spacing.col + "mm";
-                if(spacing.col === 0) row.classList.add('collapsed');
-                block.appendChild(row);
-
-                createBox(row, item.char, item.punc, "#000000", gridConfig, boxSize);
-                for (let t = 0; t < shadowCount; t++) createBox(row, item.char, null, "#d3d3d3", gridConfig, boxSize);
-                const emptyBoxes = 19 - shadowCount;
-                for (let e = 0; e < emptyBoxes; e++) createBox(row, null, null, null, gridConfig, boxSize);
-
-                if (options.stroke && steps) await generateStaticDiagrams(item.char, steps);
-                if (options.def && defBox) fetchDeepDefinition(item.char, defBox);
-
-                rowsInCurrentPage++;
-            }
-
-            if (!currentPageDiv) {
-                currentPageDiv = document.createElement('div'); currentPageDiv.className = 'page'; preview.appendChild(currentPageDiv);
-            }
-            while (rowsInCurrentPage < MAX_ROWS) {
-                const currentTop = margins.top + (rowsInCurrentPage * spacing.row);
-                const block = document.createElement('div');
-                block.className = 'char-block';
-                block.style.left = margins.left + "mm";
-                block.style.top = currentTop + "mm";
-                block.style.height = boxSize + "mm";
-                currentPageDiv.appendChild(block);
-                
-                const row = document.createElement('div'); row.className = 'practice-row';
-                row.style.gap = spacing.col + "mm";
-                if(spacing.col === 0) row.classList.add('collapsed');
-                block.appendChild(row);
-                
-                for (let k = 0; k < 20; k++) createBox(row, null, null, null, gridConfig, boxSize);
-                rowsInCurrentPage++;
-            }
-
-        } else {
-            // CONTINUOUS MODE (Batched by 20)
-            const BOXES_PER_ROW = 20;
-            
-            for (let i = 0; i < displayItems.length; i += BOXES_PER_ROW) {
-                const chunk = displayItems.slice(i, i + BOXES_PER_ROW);
-
-                if (currentPageDiv === null || rowsInCurrentPage >= MAX_ROWS) {
-                    currentPageDiv = document.createElement('div');
-                    currentPageDiv.className = 'page';
-                    preview.appendChild(currentPageDiv);
-                    rowsInCurrentPage = 0;
-                }
-
-                const currentTop = margins.top + (rowsInCurrentPage * spacing.row);
-                const block = document.createElement('div');
-                block.className = 'char-block';
-                block.style.left = margins.left + "mm";
-                block.style.top = currentTop + "mm";
-                block.style.height = boxSize + "mm";
-                currentPageDiv.appendChild(block);
-
-                const header = document.createElement('div');
-                header.className = 'header-row';
-                if (rowsInCurrentPage === 0) header.classList.add('first-row-special');
-                
-                if (options.pinyin) {
-                    const pinyinRow = document.createElement('div');
-                    pinyinRow.className = 'pinyin-grid-row';
-                    pinyinRow.style.gap = spacing.col + "mm";
-
-                    for (let k = 0; k < BOXES_PER_ROW; k++) {
-                        const pCell = document.createElement('div');
-                        pCell.className = 'pinyin-cell';
-                        pCell.style.width = boxSize + "mm"; 
-                        
-                        if (k < chunk.length) {
-                            pCell.innerText = pinyin(chunk[k].char);
-                        }
-                        pinyinRow.appendChild(pCell);
-                    }
-                    header.appendChild(pinyinRow);
-                }
-                block.appendChild(header);
-
-                const row = document.createElement('div');
-                row.className = 'practice-row';
-                row.style.gap = spacing.col + "mm";
-                if(spacing.col === 0) row.classList.add('collapsed');
-                block.appendChild(row);
-
-                for (let k = 0; k < BOXES_PER_ROW; k++) {
-                    if (k < chunk.length) {
-                        createBox(row, chunk[k].char, chunk[k].punc, "#000000", gridConfig, boxSize);
-                    } else {
-                        createBox(row, null, null, null, gridConfig, boxSize);
-                    }
-                }
-                rowsInCurrentPage++;
-            }
-
-            if (!currentPageDiv) {
-                currentPageDiv = document.createElement('div'); currentPageDiv.className = 'page'; preview.appendChild(currentPageDiv);
-            }
-            while (rowsInCurrentPage < MAX_ROWS) {
-                const currentTop = margins.top + (rowsInCurrentPage * spacing.row);
-                const block = document.createElement('div');
-                block.className = 'char-block';
-                block.style.left = margins.left + "mm";
-                block.style.top = currentTop + "mm";
-                block.style.height = boxSize + "mm";
-                currentPageDiv.appendChild(block);
-                
-                const row = document.createElement('div'); row.className = 'practice-row';
-                row.style.gap = spacing.col + "mm";
-                if(spacing.col === 0) row.classList.add('collapsed');
-                block.appendChild(row);
-                
-                for (let k = 0; k < 20; k++) createBox(row, null, null, null, gridConfig, boxSize);
-                rowsInCurrentPage++;
-            }
-        }
-    }
-
-    function createBox(row, char, punc, strokeColor, config, boxSize) {
-        const box = document.createElement('div');
-        box.className = 'grid-box';
-        
-        const BORDER_LINES = `
-            <line x1=".2" y1="28.55" x2="28.547" y2="28.55" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .4px;"/>
-            <line x1=".2" y1=".2" x2="28.547" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .4px;"/>
-            <line x1=".2" y1="28.55" x2=".2" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .4px;"/>
-            <line x1="28.547" y1="28.55" x2="28.547" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .4px;"/>
-        `;
-        
-        const MI_INTERNAL = `
-            <line x1=".2" y1="14.37" x2=".9079" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="1.643" y1="14.37" x2="8.7155" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .943 .943 .943 .943 .943 .943; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="9.187" y1="14.37" x2="27.5755" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .943 .943 .943 .943 .943 .943; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.8391" y1="14.37" x2="28.547" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="28.5466" x2="14.373" y2="27.8379" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="27.107" x2="14.373" y2="20.0337" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .9431 .9431 .9431 .9431 .9431 .9431; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="19.5621" x2="14.373" y2="1.1715" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .9431 .9431 .9431 .9431 .9431 .9431; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1=".908" x2="14.373" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1=".2" y1="28.55" x2=".7669" y2="27.983" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="1.2623" y1="27.4877" x2="6.5776" y2="22.1717" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="6.932" y1="21.8173" x2="27.8391" y2=".908" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.9801" y1=".767" x2="28.547" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="28.547" y1="28.55" x2="27.9801" y2="27.983" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.4847" y1="27.4877" x2="22.1694" y2="22.1717" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="21.815" y1="21.8173" x2=".9079" y2=".908" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1=".8374" y1=".8375" x2=".2705" y2=".2705" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-        `;
-        const CROSS_INTERNAL = `
-            <line x1=".2" y1="14.37" x2=".9079" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="1.643" y1="14.37" x2="8.7155" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .943 .943 .943 .943 .943 .943; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="9.187" y1="14.37" x2="27.5755" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .943 .943 .943 .943 .943 .943; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.8391" y1="14.37" x2="28.547" y2="14.37" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="28.5466" x2="14.373" y2="27.8379" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="27.107" x2="14.373" y2="20.0337" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .9431 .9431 .9431 .9431 .9431 .9431; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1="19.5621" x2="14.373" y2="1.1715" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 .9431 .9431 .9431 .9431 .9431 .9431; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="14.373" y1=".908" x2="14.373" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1=".2" y1="28.55" x2=".7669" y2="27.983" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="1.2623" y1="27.4877" x2="6.5776" y2="22.1717" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="6.932" y1="21.8173" x2="27.8391" y2=".908" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.9801" y1=".767" x2="28.547" y2=".2" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="28.547" y1="28.55" x2="27.9801" y2="27.983" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="27.4847" y1="27.4877" x2="22.1694" y2="22.1717" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1="21.815" y1="21.8173" x2=".9079" y2=".908" style="fill: none; stroke: ${config.color}; stroke-dasharray: 0 0 0 0 0 0 1.0023 1.0023 1.0023 1.0023 1.0023 1.0023; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-            <line x1=".8374" y1=".8375" x2=".2705" y2=".2705" style="fill: none; stroke: ${config.color}; stroke-miterlimit: 10; stroke-width: .1333px;"/>
-        `;
-
-        let internalContent = "";
-        if (config.style === 'mi') internalContent = MI_INTERNAL;
-        else if (config.style === 'cross') internalContent = CROSS_INTERNAL;
-
-        box.innerHTML = `
-        <svg class="grid-bg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28.747 28.75" style="width:100%; height:100%; display:block; overflow:visible;" preserveAspectRatio="none">
-            ${BORDER_LINES}
-            <g style="opacity: ${config.opacity};">${internalContent}</g>
-        </svg>`;
-
-        if (punc) {
-            const pSpan = document.createElement('span');
-            pSpan.className = 'corner-punc';
-            pSpan.innerText = punc;
-            
-            if (punc === '，' || punc === ',') {
-                pSpan.style.right = "-6px";
-                pSpan.style.bottom = "2px";
-            } else if (punc === '。' || punc === '.') {
-                pSpan.style.right = "-4.5px";
-                pSpan.style.bottom = "2px";
-            } else {
-                pSpan.style.right = "2px";
-                pSpan.style.bottom = "2px";
-            }
-
-            box.appendChild(pSpan);
-        }
-
-        const targetDiv = document.createElement('div');
-        const id = 'box-' + Math.random().toString(36).substr(2, 9);
-        targetDiv.id = id; targetDiv.className = 'hanzi-target';
-        box.appendChild(targetDiv); row.appendChild(box);
-
-        if (char) {
-            HanziWriter.create(id, char, { width: 38.56, height: 38.57, padding: 0, strokeColor: strokeColor, showOutline: false, showCharacter: true });
-        }
-    }
-
-    async function fetchDeepDefinition(char, element) {
-        try {
-            const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&dt=bd&q=" + encodeURI(char);
-            const response = await fetch(url);
-            const data = await response.json();
-            let meanings = [];
-            if (data[1]) data[1].forEach(p => { if (p[1]) meanings.push(p[1].slice(0, 3).join(", ")); });
-            if (meanings.length === 0 && data[0] && data[0][0]) meanings.push(data[0][0][0]);
-            element.innerText = meanings.join("; ");
-        } catch (err) { element.innerText = ""; }
-    }
-
-    async function generateStaticDiagrams(char, container) {
-        try {
-            let charData = await HanziWriter.loadCharacterData(char);
-            let strokes = charData.strokes;
-            for (let i = 0; i < strokes.length; i++) {
-                let box = document.createElement('div'); box.className = 'stroke-box';
-                let svg = '<svg viewBox="0 0 1024 1024"><g transform="scale(1, -1) translate(0, -900)">';
-                for (let j = 0; j < strokes.length; j++) { if (j > i) svg += '<path d="' + strokes[j] + '" fill="#e6e6e6" />'; }
-                for (let j = 0; j < strokes.length; j++) { if (j <= i) svg += '<path d="' + strokes[j] + '" fill="#000000" />'; }
-                svg += '</g></svg>';
-                box.innerHTML = svg; container.appendChild(box);
-            }
-        } catch (err) { }
-    }
-
-    async function downloadPDF() {
-        const text = textInput.value;
-        const btn = event.target;
-        const status = document.getElementById('status');
-        if (!text) { alert("Please enter some text!"); return; }
-
-        const gridConfig = { style: gridStyleInput.value, color: gridColorInput.value, opacity: gridOpacityInput.value };
-        const spacing = { row: parseFloat(rowSpacingInput.value), col: parseFloat(colSpacingInput.value) };
-        const margins = { top: parseFloat(marginTopInput.value), left: parseFloat(marginLeftInput.value) };
-        const boxSize = parseFloat(boxSizeInput.value);
-        const shadowCount = parseInt(shadowHanziInput.value);
-        const displayOptions = { pinyin: showPinyinInput.checked, stroke: showStrokeInput.checked, def: showDefInput.checked };
-        const numOffset = 0;
-
-        btn.disabled = true; btn.innerText = "Generating...";
-        status.innerHTML = " ⏳  Generating PDF... (10-30 seconds)";
-
-        try {
-            const response = await fetch('/generate-pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    genMode: genModeInput.value,
-                    text, gridConfig, spacing, margins, boxSize, shadowCount, displayOptions,
-                    numberOffset: numOffset
-                })
-            });
-            if (!response.ok) throw new Error("Generation failed");
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = "My_Hanzi_Workbook.pdf";
-            document.body.appendChild(a); a.click(); a.remove();
-            status.innerHTML = " ✅  PDF downloaded successfully!";
-        } catch (err) {
-            console.error(err); status.innerHTML = " ❌  Error generating PDF";
-        }
-        btn.disabled = false; btn.innerText = "Download PDF";
-    }
+/* ---------- start ---------- */
+function init() {
+ const cs = getComputedStyle(document.documentElement);
+ FONTS = {zh: cs.getPropertyValue('--zh').trim(), py: cs.getPropertyValue('--pyf').trim()};
+ readShared();
+ buildStatic();
+ $('#txt').value = S.text;
+ bind();
+ syncUI();
+ updateChips();
+ if (S.meaning) loadDict();
+ renderP = render();
+ if (document.fonts) {             // text is measured for the layout, so redo it once fonts have loaded
+  document.fonts.ready.then(() => { inkCache.clear(); schedule(0); });
+  document.fonts.addEventListener('loadingdone', () => { inkCache.clear(); schedule(80); });
+ }
+ const reload = () => { $('#txt').value = S.text; syncUI(); updateChips(); schedule(0); };
+ const opened = () => {
+  const prev = sharedFrom; sharedFrom = null;
+  if (prev) toast('Opened a shared worksheet', 'info', {label: 'Undo', fn: () => { S = prev; save(); reload(); }});
+ };
+ opened();
+ addEventListener('hashchange', () => { readShared(); if (sharedFrom) { reload(); opened(); } });
+}
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
